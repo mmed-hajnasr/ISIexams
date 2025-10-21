@@ -30,6 +30,7 @@ jobs:
         pip install -r requirements-build.txt
 
     - name: Verify project structure
+      shell: cmd
       run: |
         echo Verifying required files and directories...
         if not exist web echo ERROR: web directory not found! && exit /b 1
@@ -41,6 +42,7 @@ jobs:
         echo All required files found!
 
     - name: Create data directory
+      shell: cmd
       run: if not exist data mkdir data
 
     - name: Build with PyInstaller
