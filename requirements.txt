@@ -8,8 +8,8 @@
 # Web application dependencies
 eel>=0.16.0  # For desktop web app interface
 
-# Optimization solver for teacher assignment
-ortools>=9.0.0  # For CP-SAT solver in assignements.py
+# Optimization solver for teacher assignment (REQUIRED)
+ortools>=9.0.0  # For CP-SAT solver in assignements.py - MANDATORY dependency
 
 # Optional dependencies for enhanced functionality
 pandas>=2.0.0  # For advanced CSV processing if needed

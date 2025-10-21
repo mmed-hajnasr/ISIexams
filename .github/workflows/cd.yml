@@ -11,8 +11,8 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ['3.11']
-        architecture: ['x86', 'x64']
+        python-version: ['3.10']
+        architecture: ['x64']  # Focus on x64 only for better OR-Tools compatibility
         build-type: ['windowed', 'console']
 
     steps:
@@ -32,8 +32,23 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        
+        # Install build requirements first
         pip install -r requirements-build.txt
+        
+        # Install core dependencies
+        pip install eel>=0.16.0
+        pip install pandas>=2.0.0
+        pip install pydantic>=2.0.0
+        pip install openpyxl>=3.0.0
+        pip install weasyprint
+        
+        # Install OR-Tools (REQUIRED - fail if not available)
+        echo "Installing OR-Tools (required dependency)..."
+        pip install "ortools>=9.0.0"
+        
+        # Verify OR-Tools installation
+        python -c "import ortools; print('✓ OR-Tools installed successfully:', ortools.__version__)"
 
     - name: Create necessary directories
       run: |
@@ -44,9 +59,9 @@ jobs:
       run: |
         python -c "import eel; print('✓ Eel imported successfully')"
         python -c "import weasyprint; print('✓ Weasyprint imported successfully')"
-        python -c "import ortools; print('✓ OR-Tools imported successfully')"
         python -c "import pandas; print('✓ Pandas imported successfully')"
         python -c "import openpyxl; print('✓ OpenPyXL imported successfully')"
+        python -c "import ortools; print('✓ OR-Tools imported successfully')"
         python -c "from seances import Seances; print('✓ Local modules imported successfully')"
 
     - name: Build with PyInstaller
@@ -86,6 +101,7 @@ jobs:
           --hidden-import "pdf_generation.surveillance_report" ^
           --hidden-import "ortools.sat.python.cp_model" ^
           --hidden-import "ortools.sat" ^
+          --hidden-import "ortools.linear_solver" ^
           --hidden-import "weasyprint" ^
           --hidden-import "weasyprint.css" ^
           --hidden-import "weasyprint.html" ^
@@ -96,6 +112,7 @@ jobs:
           --hidden-import "pydantic" ^
           --collect-all "weasyprint" ^
           --collect-all "eel" ^
+          --collect-all "ortools" ^
           --name "ISIexams-${{ matrix.architecture }}-${{ matrix.build-type }}" ^
           --clean app.py
 
@@ -103,7 +120,7 @@ jobs:
       run: |
         echo Build completed. Checking output:
         if exist dist\ISIexams-${{ matrix.architecture }}-${{ matrix.build-type }}.exe (
-          echo SUCCESS: Executable created successfully
+          echo SUCCESS: Executable created successfully with full OR-Tools support
           dir dist\ISIexams-${{ matrix.architecture }}-${{ matrix.build-type }}.exe
         ) else (
           echo ERROR: Executable not found!
