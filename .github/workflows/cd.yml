@@ -48,7 +48,7 @@ jobs:
         pip install "ortools>=9.0.0"
         
         # Verify OR-Tools installation
-        python -c "import ortools; print('✓ OR-Tools installed successfully:', ortools.__version__)"
+        python -c "import ortools; print('OR-Tools installed successfully:', ortools.__version__)"
 
     - name: Create necessary directories
       run: |
@@ -57,12 +57,12 @@ jobs:
 
     - name: Test imports
       run: |
-        python -c "import eel; print('✓ Eel imported successfully')"
-        python -c "import weasyprint; print('✓ Weasyprint imported successfully')"
-        python -c "import pandas; print('✓ Pandas imported successfully')"
-        python -c "import openpyxl; print('✓ OpenPyXL imported successfully')"
-        python -c "import ortools; print('✓ OR-Tools imported successfully')"
-        python -c "from seances import Seances; print('✓ Local modules imported successfully')"
+        python -c "import eel; print('Eel imported successfully')"
+        python -c "import weasyprint; print('Weasyprint imported successfully')"
+        python -c "import pandas; print('Pandas imported successfully')"
+        python -c "import openpyxl; print('OpenPyXL imported successfully')"
+        python -c "import ortools; print('OR-Tools imported successfully')"
+        python -c "from seances import Seances; print('Local modules imported successfully')"
 
     - name: Build with PyInstaller
       shell: cmd
