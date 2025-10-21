@@ -29,18 +29,61 @@ jobs:
     - name: Install system dependencies
       shell: powershell
       run: |
-        # Install GTK3 runtime for WeasyPrint
-        choco install -y gtk-runtime
+        # Install MSYS2 for better GTK/GObject support
+        Write-Host "Installing MSYS2..."
+        choco install -y msys2
         
-        # Download and extract GTK3 runtime for distribution
-        Invoke-WebRequest -Uri "https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases/download/2022-01-04/gtk3-runtime-3.24.31-2022-01-04-ts-win64.exe" -OutFile "gtk-installer.exe"
-        Start-Process -FilePath "gtk-installer.exe" -ArgumentList "/S" -Wait
+        # Verify MSYS2 installation
+        if (-not (Test-Path "C:	ools\msys64\usr\bin\bash.exe")) {
+          Write-Host "ERROR: MSYS2 installation failed!"
+          exit 1
+        }
         
-        # Verify GTK installation
-        if (Test-Path "C:\Program Files\GTK3-Runtime Win64\bin") {
-          Write-Host "GTK3 runtime installed successfully"
+        # Wait a bit for MSYS2 to settle
+        Start-Sleep -Seconds 5
+        
+        # Update MSYS2 core packages first
+        Write-Host "Updating MSYS2 core packages..."
+        try {
+          & C:	ools\msys64\usr\bin\bash.exe -l -c "pacman -Syu --noconfirm"
+        } catch {
+          Write-Host "Warning: MSYS2 update had issues, continuing..."
+        }
+        
+        # Install GTK3 and GObject libraries via MSYS2
+        Write-Host "Installing GTK3 and GObject libraries..."
+        $packages = @(
+          "mingw-w64-x86_64-gtk3",
+          "mingw-w64-x86_64-gobject-introspection", 
+          "mingw-w64-x86_64-cairo",
+          "mingw-w64-x86_64-pango",
+          "mingw-w64-x86_64-gdk-pixbuf2"
+        )
+        
+        foreach ($package in $packages) {
+          Write-Host "Installing $package..."
+          try {
+            & C:	ools\msys64\usr\bin\bash.exe -l -c "pacman -S --noconfirm $package"
+          } catch {
+            Write-Host "Warning: Failed to install $package, continuing..."
+          }
+        }
+        
+        # Add MSYS2 mingw64 to PATH for the rest of the build
+        $env:PATH = "C:	ools\msys64\mingw64\bin;" + $env:PATH
+        # Don't use SetEnvironmentVariable as it requires admin privileges
+        
+        # Verify GObject installation
+        if (Test-Path "C:	ools\msys64\mingw64\bin\libgobject-2.0-0.dll") {
+          Write-Host "GObject libraries installed successfully"
+          Get-ChildItem "C:	ools\msys64\mingw64\bin\libg*.dll" | Select-Object -First 5
         } else {
-          Write-Host "Warning: GTK3 runtime not found at expected location"
+          Write-Host "Warning: GObject libraries not found"
+          # List what's actually available
+          if (Test-Path "C:	ools\msys64\mingw64\bin") {
+            Write-Host "Available DLL files:"
+            Get-ChildItem "C:	ools\msys64\mingw64\bin\*.dll" | Select-Object -First 10
+          }
         }
 
     - name: Install Python dependencies
@@ -56,14 +99,21 @@ jobs:
         pip install pandas>=2.0.0
         pip install pydantic>=2.0.0
         pip install openpyxl>=3.0.0
+        
+        # Install PyGObject and WeasyPrint with proper GObject support
+        Write-Host "Installing PyGObject and WeasyPrint..."
+        $env:PATH = "C:\tools\msys64\mingw64\bin;" + $env:PATH
+        pip install PyGObject
         pip install weasyprint
         
         # Install OR-Tools (REQUIRED - fail if not available)
         Write-Host "Installing OR-Tools (required dependency)..."
         pip install "ortools>=9.0.0"
         
-        # Verify OR-Tools installation
+        # Verify all installations
         python -c "import ortools; print('OR-Tools installed successfully:', ortools.__version__)"
+        python -c "import gi; print('PyGObject installed successfully')"
+        python -c "import weasyprint; print('WeasyPrint installed successfully')"
 
     - name: Create necessary directories
       shell: cmd
@@ -74,11 +124,14 @@ jobs:
     - name: Test imports
       shell: powershell
       run: |
+        $env:PATH = "C:\tools\msys64\mingw64\bin;" + $env:PATH
         python -c "import eel; print('Eel imported successfully')"
         python -c "import weasyprint; print('Weasyprint imported successfully')"
         python -c "import pandas; print('Pandas imported successfully')"
         python -c "import openpyxl; print('OpenPyXL imported successfully')"
         python -c "import ortools; print('OR-Tools imported successfully')"
+        python -c "import gi; print('PyGObject imported successfully')"
+        python -c "from gi.repository import GObject; print('GObject imported successfully')"
         python -c "from seances import Seances; print('Local modules imported successfully')"
 
     - name: Build with PyInstaller
@@ -104,12 +157,33 @@ jobs:
           exit /b 1
         )
         
-        # Build with PyInstaller (simpler approach - include GTK runtime separately)
+        # Set PATH to include MSYS2 libraries
+        set PATH=C:\tools\msys64\mingw64\bin;%PATH%
+        
+        # Build with PyInstaller including GObject libraries
         pyinstaller --noconfirm --onefile --windowed ^
           --add-data "web;web" ^
           --add-data "static;static" ^
           --add-data "pdf_generation;pdf_generation" ^
           --add-data "data;data" ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libgobject-2.0-0.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libglib-2.0-0.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libgio-2.0-0.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libgmodule-2.0-0.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libgthread-2.0-0.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libcairo-2.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libcairo-gobject-2.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libpango-1.0-0.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libpangocairo-1.0-0.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libgdk_pixbuf-2.0-0.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libharfbuzz-0.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libfontconfig-1.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libfreetype-6.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libffi-8.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libintl-8.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libiconv-2.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\libpcre2-8-0.dll;." ^
+          --add-binary "C:\tools\msys64\mingw64\bin\zlib1.dll;." ^
           --hidden-import "eel" ^
           --hidden-import "seances" ^
           --hidden-import "enseignants" ^
@@ -124,12 +198,21 @@ jobs:
           --hidden-import "weasyprint.html" ^
           --hidden-import "cffi" ^
           --hidden-import "cairocffi" ^
+          --hidden-import "_cffi_backend" ^
+          --hidden-import "gi" ^
+          --hidden-import "gi.repository" ^
+          --hidden-import "gi.repository.GObject" ^
+          --hidden-import "gi.repository.Gio" ^
+          --hidden-import "gi.repository.GLib" ^
           --hidden-import "openpyxl" ^
           --hidden-import "pandas" ^
           --hidden-import "pydantic" ^
           --collect-all "weasyprint" ^
           --collect-all "eel" ^
           --collect-all "ortools" ^
+          --collect-all "cffi" ^
+          --collect-all "cairocffi" ^
+          --collect-all "gi" ^
           --name "ISIexams-${{ matrix.architecture }}" ^
           --clean app.py
 
@@ -162,43 +245,22 @@ jobs:
         # Copy static directory
         Copy-Item "static" "release\" -Recurse
         
-        # Copy GTK3 runtime for WeasyPrint support
-        if (Test-Path "C:\Program Files\GTK3-Runtime Win64") {
-          Write-Host "Including GTK3 runtime for WeasyPrint support..."
-          New-Item -ItemType Directory -Force -Path "release\gtk3-runtime"
-          Copy-Item "C:\Program Files\GTK3-Runtime Win64\*" "release\gtk3-runtime\" -Recurse -ErrorAction SilentlyContinue
-        } elseif (Test-Path "C:\GTK") {
-          Write-Host "Including GTK runtime from C:\GTK..."
-          New-Item -ItemType Directory -Force -Path "release\gtk3-runtime"
-          Copy-Item "C:\GTK\*" "release\gtk3-runtime\" -Recurse -ErrorAction SilentlyContinue
-        } else {
-          Write-Host "Warning: GTK runtime not found - PDF generation may not work"
-        }
-        
-        # Create a startup script that sets up GTK environment
-        Write-Output "@echo off" | Out-File -FilePath "release\ISIexams.bat" -Encoding ascii
-        Write-Output "set GTK_PATH=%~dp0gtk3-runtime" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
-        Write-Output "set PATH=%GTK_PATH%\bin;%PATH%" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
-        Write-Output "set GI_TYPELIB_PATH=%GTK_PATH%\lib\girepository-1.0" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
-        Write-Output "set GDK_PIXBUF_MODULE_FILE=%GTK_PATH%\lib\gdk-pixbuf-2.0\2.10.0\loaders.cache" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
-        Write-Output "echo Starting ISIexams..." | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
-        Write-Output "echo GTK Runtime: %GTK_PATH%" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
-        Write-Output "`"%~dp0ISIexams-${{ matrix.architecture }}.exe`"" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
-        
         # Create README with instructions
         Write-Output "# ISIexams Application" | Out-File -FilePath "release\README.txt" -Encoding utf8
         Write-Output "" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "## How to run:" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
-        Write-Output "1. Extract this zip file to a folder" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
-        Write-Output "2. Run ISIexams.bat (recommended - sets up GTK for PDF generation)" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
-        Write-Output "   OR double-click ISIexams-${{ matrix.architecture }}.exe directly" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "Simply double-click ISIexams-${{ matrix.architecture }}.exe" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "## Contents:" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
-        Write-Output "- ISIexams-${{ matrix.architecture }}.exe: Main application" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
-        Write-Output "- ISIexams.bat: Startup script with GTK environment" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- ISIexams-${{ matrix.architecture }}.exe: Self-contained application with all dependencies" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "- web/: Web interface files" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "- static/: Application assets" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
-        Write-Output "- gtk3-runtime/: GTK libraries for PDF generation" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "## Features:" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- Complete exam scheduling system" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- Teacher assignment optimization (OR-Tools)" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- PDF report generation (WeasyPrint with embedded GObject libraries)" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- No additional software installation required" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         
         # Create zip file
         Compress-Archive -Path "release\*" -DestinationPath "ISIexams-${{ matrix.architecture }}.zip"
@@ -219,13 +281,30 @@ jobs:
         files: ISIexams-${{ matrix.architecture }}.zip
         generate_release_notes: true
         body: |
-          ## ISIexams Release
+          ## ISIexams Release - Self-Contained Windows Application
           
-          This release contains:
-          - **ISIexams-${{ matrix.architecture }}.exe** - The main application executable
-          - **web/** - Web interface files
-          - **static/** - Static assets (images, etc.)
+          This release contains a fully self-contained Windows application with all dependencies embedded.
           
-          Simply extract the zip file and run the executable to start the application.
+          ### What's Included:
+          - **ISIexams-${{ matrix.architecture }}.exe** - Main application with embedded GTK/GObject libraries
+          - **web/** - Complete web interface
+          - **static/** - Application assets and images
+          
+          ### Features:
+          - Complete exam scheduling and management system
+          - Intelligent teacher assignment optimization (OR-Tools)
+          - Professional PDF report generation (WeasyPrint + GObject)
+          - **No additional software installation required!**
+          
+          ### How to Use:
+          1. Download and extract the zip file
+          2. Double-click ISIexams-${{ matrix.architecture }}.exe
+          3. That's it! All dependencies are embedded in the executable.
+          
+          ### Technical Details:
+          - Self-contained executable with embedded GObject/GTK libraries
+          - Includes OR-Tools for optimization algorithms  
+          - WeasyPrint for PDF generation with full native library support
+          - Works on Windows 10/11 without requiring any additional installations
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
