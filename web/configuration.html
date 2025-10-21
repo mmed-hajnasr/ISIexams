@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+
+    <title>Configuration - Gestion des Examens ISI</title>
+
+    <!-- Custom fonts for this template-->
+    <link
+      href="vendor/fontawesome-free/css/all.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+      rel="stylesheet"
+    />
+
+    <!-- Custom styles for this template-->
+    <link href="css/sb-admin-2.min.css" rel="stylesheet" />
+  </head>
+
+  <body id="page-top">
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+      <!-- Sidebar -->
+      <ul
+        class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion"
+        id="accordionSidebar"
+      >
+        <!-- Sidebar - Brand -->
+        <a
+          class="sidebar-brand d-flex align-items-center justify-content-center"
+          href="seances.html"
+        >
+          <img src="img/isi-logo.png" style="width: 50px; height: 50px" />
+        </a>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider my-0" />
+
+        <!-- Nav Item - Dashboard -->
+        <li class="nav-item">
+          <a class="nav-link" href="seances.html">
+            <i class="fas fa-fw fa-calendar"></i>
+            <span>Seances</span></a
+          >
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="enseignants.html">
+            <i class="fas fa-fw fa-user"></i>
+            <span>Enseignants</span></a
+          >
+        </li>
+        
+        <li class="nav-item active">
+          <a class="nav-link" href="configuration.html">
+            <i class="fas fa-fw fa-cog"></i>
+            <span>Paramètres</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider" />
+        <!-- Heading -->
+        <div class="sidebar-heading">Génération</div>
+
+        <!-- Nav Item - Pages Collapse Menu -->
+        <li class="nav-item">
+          <a class="nav-link" href="assignements.html">
+            <i class="fas fa-fw fa-users"></i>
+            <span>Assignements</span></a
+          >
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="emploi.html">
+            <i class="fas fa-fw fa-calendar-check"></i>
+            <span>Emplois du Temps</span></a
+          >
+        </li>
+
+      </ul>
+      <!-- End of Sidebar -->
+
+      <div id="content-wrapper" class="d-flex flex-column">
+        <!-- Main Content -->
+        <div id="content">
+          <!-- Begin Page Content -->
+          <div class="container-fluid">
+            <!-- Error Alert - Removed as requested -->
+
+            <!-- Success Alert -->
+            <div id="successAlert" class="alert alert-success alert-dismissible fade" role="alert" style="display: none;">
+              <strong>Succès!</strong> <span id="successMessage"></span>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+
+            <!-- Page Heading -->
+
+            <div class="mb-3"></div>
+            <div class="d-sm-flex align-items-center justify-content-between mb-4">
+              <h1 class="h3 mb-0 text-gray-800">Configuration</h1>
+            </div>
+
+            <!-- Content Row -->
+            <div class="row">
+              <!-- Teachers per Room Configuration -->
+              <div class="col-lg-12">
+                <div class="card shadow mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Configuration de Surveillance</h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="teachersPerRoom">Enseignants par Salle:</label>
+                          <input type="number" class="form-control" id="teachersPerRoom" min="1" value="2">
+                          <small class="form-text text-muted">
+                            Nombre d'enseignants requis pour surveiller chaque salle d'examen.
+                          </small>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="surplusTeachersPerRoom">Ratio Enseignants Surplus par Salle:</label>
+                          <input type="number" class="form-control" id="surplusTeachersPerRoom" min="0" step="0.1" value="0.5">
+                          <small class="form-text text-muted">
+                            <strong>Ratio pour calculer les enseignants de substitution d'urgence.</strong><br>
+                            <u>Exemple:</u> Avec ratio = 0.5 et 2 enseignants/salle, pour une séance avec 2 salles:<br>
+                            • Enseignants requis: 2 salles × 2 enseignants = <strong>4 enseignants</strong><br>
+                            • Substituts: 2 salles × 0.5 = <strong>1 substitut</strong><br>
+                            • <strong>Total assigné: 4 + 1 = 5 enseignants</strong>
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Surveillance Statistics -->
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="card shadow mb-4">
+                  <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Statistiques de Surveillance</h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-3">
+                        <div class="card border-left-success shadow h-100 py-2">
+                          <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                              <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Surveillances Disponibles</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="availableSurveillance">-</div>
+                              </div>
+                              <div class="col-auto">
+                                <i class="fas fa-users fa-2x text-gray-300"></i>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-3">
+                        <div class="card border-left-warning shadow h-100 py-2">
+                          <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                              <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Surveillances Nécessaires</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="neededSurveillance">-</div>
+                              </div>
+                              <div class="col-auto">
+                                <i class="fas fa-clipboard-check fa-2x text-gray-300"></i>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-3">
+                        <div class="card border-left-info shadow h-100 py-2">
+                          <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                              <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Surveillances Surplus</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="surplusSurveillance">-</div>
+                              </div>
+                              <div class="col-auto">
+                                <i class="fas fa-plus-circle fa-2x text-gray-300"></i>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-3">
+                        <div class="card shadow h-100 py-2" id="balanceCard">
+                          <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                              <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" id="balanceLabel">Balance</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800" id="surveillanceBalance">-</div>
+                              </div>
+                              <div class="col-auto">
+                                <i class="fas fa-balance-scale fa-2x text-gray-300" id="balanceIcon"></i>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Grade Surveillance Configuration -->
+            <div class="card shadow mb-4">
+              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Configuration des Surveillances par Grade</h6>
+                <button class="btn btn-sm btn-success" onclick="showAddGradeModal()">
+                  <i class="fas fa-plus"></i> Ajouter Grade
+                </button>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-bordered" id="gradeHoursTable">
+                    <thead>
+                      <tr>
+                        <th>Grade</th>
+                        <th>Surveillances</th>
+                        <th>Enseignants</th>
+                        <th>Total Disponible </th>
+                      </tr>
+                    </thead>
+                    <tbody id="gradeHoursTableBody">
+                      <!-- Grade surveillance data will be populated here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <!-- /.container-fluid -->
+        </div>
+        <!-- End of Main Content -->
+
+        <!-- Footer -->
+        <footer class="sticky-footer bg-white">
+          <div class="container my-auto">
+            <div class="copyright text-center my-auto">
+              <span>Copyright &copy; ISI Examens 2024</span>
+            </div>
+          </div>
+        </footer>
+        <!-- End of Footer -->
+      </div>
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+      <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- Add Grade Modal -->
+    <div class="modal fade" id="addGradeModal" tabindex="-1" role="dialog" aria-labelledby="addGradeModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addGradeModalLabel">Ajouter Configuration de Grade</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="addGradeForm">
+              <div class="form-group">
+                <label for="gradeInput">Grade:</label>
+                <input type="text" class="form-control" id="gradeInput" placeholder="ex: PR, MCF, ATER" required>
+              </div>
+              <div class="form-group">
+                <label for="hoursInput">Surveillances:</label>
+                <input type="number" class="form-control" id="hoursInput" min="0" placeholder="Nombre de surveillances" required>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-primary" onclick="saveGradeConfiguration()">Enregistrer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Grade Modal - Removed since we now use inline editing -->
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <!-- Custom scripts for all pages-->
+    <script src="js/sb-admin-2.min.js"></script>
+
+    <!-- Eel JavaScript -->
+    <script type="text/javascript" src="/eel.js"></script>
+
+    <script>
+      let currentConfiguration = null;
+      let surveillanceStats = null;
+      let totalRooms = 0;
+      let saveTimeoutTeachers = null;
+      let saveTimeoutSurplus = null;
+
+      function updateSurplusDisplay() {
+        if (currentConfiguration && totalRooms > 0) {
+          const surplusRatio = parseFloat($('#surplusTeachersPerRoom').val()) || 0.5;
+          const calculatedSurplus = Math.ceil(totalRooms * surplusRatio);
+          $('#surplusSurveillance').text(calculatedSurplus);
+          
+          // Recalculate balance after surplus update
+          if (surveillanceStats) {
+            updateBalanceCalculation();
+          }
+        }
+      }
+
+      function updateBalanceCalculation() {
+        if (!surveillanceStats) return;
+
+        // Get values for calculation
+        const A = surveillanceStats.total_available; // Available surveillance
+        const B = surveillanceStats.total_needed;    // Needed surveillance
+        const C = parseInt($('#surplusSurveillance').text()) || 0; // Surplus surveillance
+        
+        // Calculate D = A - (B + C)
+        const D = A - (B + C);
+        $('#surveillanceBalance').text(D);
+
+        // Update balance card styling
+        const balanceCard = $('#balanceCard');
+        const balanceLabel = $('#balanceLabel');
+        const balanceIcon = $('#balanceIcon');
+
+        // Remove all existing classes
+        balanceCard.removeClass('border-left-success border-left-danger border-left-warning');
+        balanceIcon.removeClass('fa-check-circle fa-exclamation-triangle fa-balance-scale');
+        balanceLabel.removeClass('text-success text-warning text-danger');
+
+        // Apply color logic: D >= 0 (green), D >= -C (yellow), else (red)
+        if (D >= 0) {
+          balanceCard.addClass('border-left-success');
+          balanceLabel.addClass('text-success').text('Excédent');
+          balanceIcon.addClass('fa-check-circle');
+        } else if (D >= -C) {
+          balanceCard.addClass('border-left-warning');
+          balanceLabel.addClass('text-warning').text('Acceptable');
+          balanceIcon.addClass('fa-balance-scale');
+        } else {
+          balanceCard.addClass('border-left-danger');
+          balanceLabel.addClass('text-danger').text('Déficit');
+          balanceIcon.addClass('fa-exclamation-triangle');
+        }
+      }
+
+      $(document).ready(function() {
+        console.log('Configuration page loaded');
+        loadConfiguration();
+        loadTotalRooms();
+        
+
+
+        // Add real-time update for surplus example when user types
+        $('#surplusTeachersPerRoom, #teachersPerRoom').on('input', function() {
+          // Update the dynamic surplus display
+          updateSurplusDisplay();
+          
+          if (currentConfiguration) {
+            // Temporarily update values for example calculation
+            const tempTeachersPerRoom = parseInt($('#teachersPerRoom').val()) || 2;
+            const tempSurplusRatio = parseFloat($('#surplusTeachersPerRoom').val()) || 0.5;
+            
+            const exampleRooms = 2;
+            const requiredTeachers = exampleRooms * tempTeachersPerRoom;
+            const surplusTeachers = Math.ceil(exampleRooms * tempSurplusRatio);
+            const totalTeachers = requiredTeachers + surplusTeachers;
+            
+            const exampleText = `
+              <strong>Ratio pour calculer les enseignants de substitution d'urgence.</strong><br>
+              <u>Exemple:</u> Avec ratio = ${tempSurplusRatio} et ${tempTeachersPerRoom} enseignants/salle, pour une séance avec ${exampleRooms} salles:<br>
+              • Enseignants requis: ${exampleRooms} salles × ${tempTeachersPerRoom} enseignants = <strong>${requiredTeachers} enseignants</strong><br>
+              • Substituts: ${exampleRooms} salles ×  ${tempSurplusRatio} = <strong>${surplusTeachers} substituts</strong><br>
+              • <strong>Total assigné: ${requiredTeachers} + ${surplusTeachers} = ${totalTeachers} enseignants</strong>
+            `;
+            
+            $('#surplusTeachersPerRoom').siblings('.form-text').html(exampleText);
+          }
+        });
+
+        // Auto-save with debounce for teachers per room
+        $('#teachersPerRoom').on('input change', function() {
+          clearTimeout(saveTimeoutTeachers);
+          saveTimeoutTeachers = setTimeout(function() {
+            updateTeachersPerRoom();
+          }, 1000); // Save 1 second after user stops typing
+        });
+
+        // Auto-save with debounce for surplus teachers per room
+        $('#surplusTeachersPerRoom').on('input change', function() {
+          clearTimeout(saveTimeoutSurplus);
+          saveTimeoutSurplus = setTimeout(function() {
+            updateSurplusTeachersPerRoom();
+          }, 1000); // Save 1 second after user stops typing
+        });
+      });
+
+      function loadTotalRooms() {
+        eel.get_total_rooms()(function(result) {
+          if (result.success) {
+            totalRooms = result.total_rooms;
+            updateSurplusDisplay();
+          } else {
+            console.log('Failed to load total rooms:', result.error);
+            totalRooms = 0;
+          }
+        });
+      }
+
+      function loadConfiguration() {
+        eel.get_configuration()(function(result) {
+          if (result.success) {
+            currentConfiguration = result.configuration;
+            displayConfiguration();
+            loadSurveillanceStatistics();
+          } else {
+            console.error('Failed to load configuration:', result.error);
+          }
+        });
+      }
+
+      function loadSurveillanceStatistics() {
+        eel.get_surveillance_statistics()(function(result) {
+          if (result.success) {
+            surveillanceStats = result;
+            displaySurveillanceStatistics();
+            // Refresh the table with updated surveillance stats
+            displayConfiguration();
+          } else {
+            console.log('Surveillance statistics not available:', result.error);
+          }
+        });
+      }
+
+      function displayConfiguration() {
+        if (!currentConfiguration) return;
+
+        // Update form values
+        $('#teachersPerRoom').val(currentConfiguration.teachers_per_room);
+        $('#surplusTeachersPerRoom').val(currentConfiguration.surplus_teachers_per_room || 0.5);
+
+        // Update the surplus calculation example
+        updateSurplusExample();
+        
+        // Update the dynamic surplus display
+        updateSurplusDisplay();
+
+        // Update grades table
+        const tbody = $('#gradeHoursTableBody');
+        tbody.empty();
+
+        // Get all unique grades (configured + missing) and sort alphabetically
+        const allGrades = [...new Set([
+          ...Object.keys(currentConfiguration.configured_grades),
+          ...currentConfiguration.missing_grades
+        ])].sort();
+
+        allGrades.forEach(grade => {
+          const surveillances = currentConfiguration.configured_grades[grade] || 0;
+          
+          // Get surveillance stats for this grade
+          let teachersCount = 0;
+          let totalAvailableWithSurplus = 0;
+          if (surveillanceStats && surveillanceStats.available_surveillance[grade]) {
+            teachersCount = surveillanceStats.available_surveillance[grade].teachers_count;
+            // Calculate total with surplus: teachers * (surveillance_hours + surplus_per_room)
+            const totalTeachersPerRoom = currentConfiguration.teachers_per_room + (currentConfiguration.surplus_teachers_per_room || 1);
+            totalAvailableWithSurplus = teachersCount * surveillances;
+          }
+
+          tbody.append(`
+            <tr data-grade="${grade}">
+              <td><strong>${grade}</strong></td>
+              <td>
+                <input type="number" 
+                       class="form-control surveillance-input" 
+                       value="${surveillances}" 
+                       min="0" 
+                       data-grade="${grade}"
+                       onchange="updateSurveillanceValue('${grade}', this.value)"
+                       style="width: 100px;">
+              </td>
+              <td>${teachersCount}</td>
+              <td class="total-available-${grade}">${totalAvailableWithSurplus}</td>
+            </tr>
+          `);
+        });
+      }
+
+      function updateSurveillanceValue(grade, newValue) {
+        const surveillances = parseInt(newValue) || 0;
+        
+        if (surveillances < 0) {
+          // Reset to 0 if negative value
+          $(`.surveillance-input[data-grade="${grade}"]`).val(0);
+          return;
+        }
+
+        // Update the backend
+        eel.set_grade_hours(grade, surveillances)(function(result) {
+          if (result.success) {
+            showSuccess(result.message);
+            // Update current configuration locally
+            currentConfiguration.configured_grades[grade] = surveillances;
+            
+            // Recalculate and update surveillance statistics
+            updateTotalAvailableForGrade(grade, surveillances);
+            loadSurveillanceStatistics();
+          } else {
+            console.error('Failed to update grade hours:', result.error);
+            // Revert the input value
+            loadConfiguration();
+          }
+        });
+      }
+
+      function updateTotalAvailableForGrade(grade, surveillances) {
+        if (surveillanceStats && surveillanceStats.available_surveillance[grade]) {
+          const teachersCount = surveillanceStats.available_surveillance[grade].teachers_count;
+          // Calculate with surplus included (just the surveillance hours, surplus is for room allocation)
+          const newTotal = teachersCount * surveillances;
+          $(`.total-available-${grade}`).text(newTotal);
+        }
+      }
+
+      function displaySurveillanceStatistics() {
+        if (!surveillanceStats) return;
+
+        // Get values for calculation
+        const A = surveillanceStats.total_available; // Available surveillance
+        const B = surveillanceStats.total_needed;    // Needed surveillance
+        
+        // Update first three cards
+        $('#availableSurveillance').text(A);
+        $('#neededSurveillance').text(B);
+        
+        // Update surplus display and calculate balance
+        updateSurplusDisplay(); // This will also trigger balance calculation
+      }
+
+      function updateTeachersPerRoom() {
+        const teachersPerRoom = parseInt($('#teachersPerRoom').val());
+        
+        if (teachersPerRoom < 1) {
+          showSuccess('Le nombre d\'enseignants par salle doit être d\'au moins 1');
+          $('#teachersPerRoom').val(currentConfiguration.teachers_per_room);
+          return;
+        }
+
+        eel.set_teachers_per_room(teachersPerRoom)(function(result) {
+          if (result.success) {
+            showSuccess(result.message);
+            currentConfiguration.teachers_per_room = teachersPerRoom;
+            updateSurplusExample();
+            loadSurveillanceStatistics();
+          } else {
+            console.error('Failed to update teachers per room:', result.error);
+            $('#teachersPerRoom').val(currentConfiguration.teachers_per_room);
+          }
+        });
+      }
+
+      function updateSurplusTeachersPerRoom() {
+        const surplusTeachersPerRoom = parseFloat($('#surplusTeachersPerRoom').val()) || 0;
+        
+        if (surplusTeachersPerRoom < 0) {
+          showSuccess('Le ratio d\'enseignants surplus par salle ne peut pas être négatif');
+          $('#surplusTeachersPerRoom').val(currentConfiguration.surplus_teachers_per_room || 0.5);
+          return;
+        }
+
+        eel.set_surplus_teachers_per_room(surplusTeachersPerRoom)(function(result) {
+          if (result.success) {
+            showSuccess(result.message);
+            currentConfiguration.surplus_teachers_per_room = surplusTeachersPerRoom;
+            // Update the dynamic surplus display
+            updateSurplusDisplay();
+            // Refresh the display to show updated calculations
+            displayConfiguration();
+          } else {
+            console.error('Failed to update surplus teachers per room:', result.error);
+            $('#surplusTeachersPerRoom').val(currentConfiguration.surplus_teachers_per_room || 0.5);
+          }
+        });
+      }
+
+      function updateSurplusExample() {
+        const teachersPerRoom = currentConfiguration ? currentConfiguration.teachers_per_room : 2;
+        const surplusRatio = currentConfiguration ? currentConfiguration.surplus_teachers_per_room : 0.5;
+        const exampleRooms = 2;
+        
+        const requiredTeachers = exampleRooms * teachersPerRoom;
+        const surplusTeachers = Math.ceil(exampleRooms * surplusRatio);
+        const totalTeachers = requiredTeachers + surplusTeachers;
+        
+        // Update the example text dynamically
+        const exampleText = `
+          <strong>Ratio pour calculer les enseignants de substitution d'urgence.</strong><br>
+          <u>Exemple:</u> Avec ratio = ${surplusRatio} et ${teachersPerRoom} enseignants/salle, pour une séance avec ${exampleRooms} salles:<br>
+          • Enseignants requis: ${exampleRooms} salles × ${teachersPerRoom} enseignants = <strong>${requiredTeachers} enseignants</strong><br>
+          • Substituts: ${exampleRooms} salles × ${surplusRatio} = <strong>${surplusTeachers} substituts</strong><br>
+          • <strong>Total assigné: ${requiredTeachers} + ${surplusTeachers} = ${totalTeachers} enseignants</strong>
+        `;
+        
+        $('#surplusTeachersPerRoom').siblings('.form-text').html(exampleText);
+      }
+
+      function showAddGradeModal() {
+        $('#gradeInput').val('');
+        $('#hoursInput').val('');
+        $('#addGradeModal').modal('show');
+      }
+
+      function saveGradeConfiguration() {
+        const grade = $('#gradeInput').val().trim().toUpperCase();
+        const surveillances = parseInt($('#hoursInput').val());
+
+        if (!grade || isNaN(surveillances) || surveillances < 0) {
+          showSuccess('Veuillez fournir un grade et un nombre de surveillances valides');
+          return;
+        }
+
+        eel.set_grade_hours(grade, surveillances)(function(result) {
+          if (result.success) {
+            showSuccess(result.message);
+            $('#addGradeModal').modal('hide');
+            loadConfiguration();
+          } else {
+            console.error('Failed to save grade configuration:', result.error);
+          }
+        });
+      }
+
+      // removeGrade function removed since actions column was removed
+
+      function showSuccess(message) {
+        $('#successMessage').text(message);
+        $('#successAlert').removeClass('show').addClass('show').show();
+        
+        // Auto-hide after 3 seconds
+        setTimeout(function() {
+          $('#successAlert').removeClass('show').hide();
+        }, 3000);
+      }
+    </script>
+  </body>
+</html>

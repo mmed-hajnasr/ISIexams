@@ -1,0 +1,1751 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+
+    <title>Emplois du Temps - ISI Exams</title>
+
+    <!-- Custom fonts for this template-->
+    <link
+      href="vendor/fontawesome-free/css/all.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+      rel="stylesheet"
+    />
+
+    <!-- Custom styles for this template-->
+    <link href="css/sb-admin-2.min.css" rel="stylesheet" />
+
+    <!-- DataTables CSS -->
+    <link
+      href="vendor/datatables/dataTables.bootstrap4.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Custom styles for assignments calendar -->
+    <style>
+      .exam-calendar {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .exam-date {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+      }
+
+      .exam-date h6 {
+        margin-bottom: 0.75rem;
+        color: #495057;
+        font-weight: 600;
+      }
+
+      .session-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.5rem;
+      }
+
+      .session-slot {
+        padding: 0.75rem;
+        border: 2px solid #dee2e6;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        text-align: center;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        background-color: white;
+        position: relative;
+      }
+
+      .session-slot:hover {
+        border-color: #007bff;
+        transform: translateY(-1px);
+      }
+
+      .session-slot.assigned {
+        background-color: #d4edda;
+        border-color: #28a745;
+        color: #155724;
+        cursor: pointer;
+      }
+
+      .session-slot.not-assigned {
+        background-color: #f8f9fa;
+        border-color: #6c757d;
+        color: #495057;
+        cursor: pointer;
+      }
+
+      .session-slot.assigned:hover {
+        background-color: #c3e6cb;
+        border-color: #1e7e34;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+
+      .session-slot.not-assigned:hover {
+        background-color: #e9ecef;
+        border-color: #495057;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+
+      .session-slot.no-exam {
+        background-color: #e2e3e5;
+        border-color: #6c757d;
+        color: #495057;
+        cursor: not-allowed;
+      }
+
+      .session-slot.unavailable {
+        background-color: #f8d7da;
+        border-color: #dc3545;
+        color: #721c24;
+        cursor: not-allowed;
+      }
+
+      .session-slot.unavailable:hover {
+        background-color: #f1b0b7;
+        border-color: #bd2130;
+      }
+
+      .session-slot.conflict {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+        color: #856404;
+        cursor: pointer;
+      }
+
+      .session-slot.conflict:hover {
+        background-color: #ffeaa7;
+        border-color: #e0a800;
+        box-shadow: 0 2px 6px rgba(255, 193, 7, 0.3);
+      }
+
+      .session-time {
+        font-weight: 600;
+        display: block;
+      }
+
+      .session-name {
+        font-size: 0.75rem;
+        opacity: 0.8;
+      }
+
+      .assignment-badge {
+        background-color: #28a745;
+        color: white;
+        font-size: 0.75rem;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-left: 5px;
+      }
+
+      .no-assignment-badge {
+        background-color: #6c757d;
+        color: white;
+        font-size: 0.75rem;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-left: 5px;
+      }
+
+      /* Teacher assignment row styling */
+      .teacher-assigned-row {
+        background-color: #d4edda !important;
+        border-left: 4px solid #28a745 !important;
+      }
+
+      .teacher-assigned-row:hover {
+        background-color: #c3e6cb !important;
+      }
+      
+      /* Responsible session styling */
+      .session-slot.responsible::before {
+        content: "👤";
+        position: absolute;
+        top: 2px;
+        left: 4px;
+        font-size: 12px;
+      }
+      
+      .session-slot.responsible {
+        position: relative;
+      }
+
+      /* Grade statistics table styling */
+      #gradeStatsTable th {
+        background-color: #f8f9fc;
+        font-weight: 600;
+        border-top: none;
+      }
+
+      #gradeStatsTable td {
+        vertical-align: middle;
+      }
+
+      .progress {
+        margin: 0;
+      }
+
+      .progress-bar {
+        font-size: 12px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+
+  <body id="page-top">
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+      <!-- Sidebar -->
+      <ul
+        class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion"
+        id="accordionSidebar"
+      >
+        <!-- Sidebar - Brand -->
+        <a
+          class="sidebar-brand d-flex align-items-center justify-content-center"
+          href="seances.html"
+        >
+          <img src="img/isi-logo.png" style="width: 50px; height: 50px" />
+        </a>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider my-0" />
+
+        <!-- Nav Item - Dashboard -->
+        <li class="nav-item">
+          <a class="nav-link" href="seances.html">
+            <i class="fas fa-fw fa-calendar"></i>
+            <span>Seances</span></a
+          >
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="enseignants.html">
+            <i class="fas fa-fw fa-user"></i>
+            <span>Enseignants</span></a
+          >
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="configuration.html">
+            <i class="fas fa-fw fa-cog"></i>
+            <span>Paramètres</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider" />
+        <!-- Heading -->
+        <div class="sidebar-heading">Génération</div>
+
+        <li class="nav-item">
+          <a class="nav-link" href="assignements.html">
+            <i class="fas fa-fw fa-users"></i>
+            <span>Assignements</span></a
+          >
+        </li>
+
+        <li class="nav-item active">
+          <a class="nav-link" href="emploi.html">
+            <i class="fas fa-fw fa-calendar-check"></i>
+            <span>Emplois du Temps</span></a
+          >
+        </li>
+
+        <!-- Nav Item - Pages Collapse Menu -->
+      </ul>
+      <!-- End of Sidebar -->
+
+      <div id="content-wrapper" class="d-flex flex-column">
+        <!-- Main Content -->
+        <div id="content">
+          <!-- Begin Page Content -->
+          <div class="container-fluid">
+            <!-- Page Heading -->
+            <div class="mb-3"></div>
+            <div
+              class="d-sm-flex align-items-center justify-content-between mb-4"
+            >
+              <h1 class="h3 mb-0 text-gray-800">Emplois du Temps</h1>
+              <div>
+                <button id="autoAssignBtn" class="btn btn-success btn-sm mr-2" 
+                        title="Assignement automatique respectant les quotas de surveillance">
+                  <i class="fas fa-magic"></i> Auto-Attribution
+                </button>
+                <button id="clearAllBtn" class="btn btn-danger btn-sm mr-2"
+                        title="Supprimer tous les assignements">
+                  <i class="fas fa-trash"></i> Tout Effacer
+                </button>
+                <button id="printAllSchedulesBtn" class="btn btn-primary btn-sm" 
+                        title="Télécharger tous les emplois du temps des enseignants dans un fichier ZIP">
+                  <i class="fas fa-file-archive"></i> Télécharger Tout (ZIP)
+                </button>
+              </div>
+            </div>
+
+            <!-- Conflict Warning Banner -->
+            <div id="conflictWarningBanner" class="alert alert-warning alert-dismissible fade show" role="alert" style="display: none;">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle mr-3" style="font-size: 1.5rem;"></i>
+                <div class="flex-grow-1">
+                  <strong>Avertissement - Conflits d'assignement détectés</strong>
+                  <p class="mb-2">Les enseignants suivants sont assignés à des séances pour lesquelles ils ont marqué leur indisponibilité :</p>
+                  <div id="conflictList"></div>
+                </div>
+              </div>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+
+            <!-- Grade Statistics Table -->
+            <div class="card shadow mb-4">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                  <i class="fas fa-chart-bar mr-2"></i>Statistiques de Surveillance par Grade
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-bordered table-hover" id="gradeStatsTable" width="100%" cellspacing="0">
+                    <thead>
+                      <tr>
+                        <th>Grade</th>
+                        <th>Quota Maximum</th>
+                        <th>Nombre d'Enseignants</th>
+                        <th>Total Assigné</th>
+                        <th>Assigné</th>
+                        <th>Utilisation (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody id="gradeStatsBody">
+                      <!-- Grade statistics will be populated by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Teachers Table Card -->
+            <div class="card shadow mb-4">
+              <div
+                class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+              >
+                <h6 class="m-0 font-weight-bold text-primary">
+                  Emplois du Temps des Enseignants
+                </h6>
+                <div>
+                  <span class="text-xs text-gray-600"
+                    >Total: <span id="totalTeachers">0</span> enseignants</span
+                  >
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table
+                    class="table table-bordered table-hover"
+                    id="employeesTable"
+                    width="100%"
+                    cellspacing="0"
+                  >
+                    <thead>
+                      <tr>
+                        <th>Actions</th>
+                        <th>Nom</th>
+                        <th>Prénom</th>
+                        <th>Email</th>
+                        <th>Grade</th>
+                        <th>Code</th>
+                        <th>Surveillance</th>
+                        <th>Assignements</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- /.container-fluid -->
+        </div>
+        <!-- End of Main Content -->
+
+        <!-- Footer -->
+        <footer class="sticky-footer bg-white">
+          <div class="container my-auto">
+            <div class="copyright text-center my-auto">
+              <span>Copyright &copy; ISI Examens 2024</span>
+            </div>
+          </div>
+        </footer>
+        <!-- End of Footer -->
+      </div>
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <!-- Teacher Assignments Modal -->
+    <div
+      class="modal fade"
+      id="assignmentsModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="assignmentsModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="assignmentsModalLabel">
+              <i class="fas fa-calendar-alt mr-2"></i>Emploi du Temps -
+              <span id="assignmentsTeacherName"></span>
+              <span
+                id="unsavedChangesIndicator"
+                class="badge badge-warning ml-2"
+                style="display: none"
+              >
+                <i class="fas fa-exclamation-triangle mr-1"></i>Changements non
+                sauvegardés
+              </span>
+            </h5>
+            <div class="ml-auto d-flex align-items-center">
+              <button
+                type="button"
+                class="btn btn-info mr-2"
+                id="printTeacherScheduleBtn"
+                title="Imprimer l'emploi du temps de cet enseignant"
+              >
+                <i class="fas fa-print mr-2"></i>Imprimer Emploi
+              </button>
+              <button
+                type="button"
+                class="btn btn-success mr-2"
+                id="saveAssignmentsBtn"
+              >
+                <i class="fas fa-save mr-2"></i>Sauvegarder les Changements
+              </button>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="modal"
+                aria-label="Close"
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+          </div>
+          <div class="modal-body">
+            <!-- Quota Bar -->
+            <div class="card mb-3">
+              <div class="card-body">
+                <div class="row align-items-center">
+                  <div class="col-md-8">
+                    <h6 class="mb-1">Quota de Surveillance</h6>
+                    <div class="progress mb-2" style="height: 20px">
+                      <div
+                        class="progress-bar"
+                        id="quotaProgressBar"
+                        role="progressbar"
+                        style="width: 0%"
+                        aria-valuenow="0"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      >
+                        <span id="quotaText">0/0</span>
+                      </div>
+                    </div>
+                    <small class="text-muted" id="quotaStatus"
+                      >Chargement du quota...</small
+                    >
+                  </div>
+                  <div class="col-md-4 text-right">
+                    <div class="h5 mb-0 font-weight-bold" id="quotaDisplay">
+                      0/0
+                    </div>
+                    <small class="text-muted">Assigné/Quota</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Assignment Summary -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-success text-uppercase mb-1"
+                        >
+                          Assignements
+                        </div>
+                        <div
+                          class="h5 mb-0 font-weight-bold text-gray-800"
+                          id="totalAssignments"
+                        >
+                          0
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i
+                          class="fas fa-clipboard-check fa-2x text-gray-300"
+                        ></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+                        >
+                          Dates
+                        </div>
+                        <div
+                          class="h5 mb-0 font-weight-bold text-gray-800"
+                          id="uniqueDates"
+                        >
+                          0
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                  <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                      <div class="col mr-2">
+                        <div
+                          class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+                        >
+                          Conflits
+                        </div>
+                        <div
+                          class="h5 mb-0 font-weight-bold text-gray-800"
+                          id="totalConflicts"
+                        >
+                          0
+                        </div>
+                      </div>
+                      <div class="col-auto">
+                        <i
+                          class="fas fa-exclamation-triangle fa-2x text-gray-300"
+                        ></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Exam Calendar -->
+            <div class="card">
+              <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                  <i class="fas fa-calendar-week mr-2"></i>Calendrier des
+                  Assignements
+                </h6>
+                <small class="text-muted">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Cliquez sur une séance pour assigner/désassigner cet
+                  enseignant
+                </small>
+              </div>
+              <div class="card-body">
+                <!-- Legend -->
+                <div class="row mb-3">
+                  <div class="col-12">
+                    <div class="d-flex flex-wrap align-items-center">
+                      <span class="mr-3 mb-1">
+                        <span class="badge badge-success mr-1">●</span>
+                        Assigné
+                      </span>
+                      <span class="mr-3 mb-1">
+                        <span class="badge badge-secondary mr-1">●</span>
+                        Non assigné
+                      </span>
+                      <span class="mr-3 mb-1">
+                        <span class="badge badge-danger mr-1">●</span>
+                        Indisponible (Souhaits)
+                      </span>
+                      <span class="mr-3 mb-1">
+                        <span class="badge badge-light mr-1">●</span>
+                        Pas d'examen
+                      </span>
+                      <span class="mr-3 mb-1">
+                        👤 Responsable
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="examCalendar">
+                  <!-- Calendar will be populated by JavaScript -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Assignment Details List -->
+            <div class="card mt-3">
+              <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                  <i class="fas fa-list mr-2"></i>Détails des Assignements
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table
+                    class="table table-bordered table-sm"
+                    id="assignmentDetailsTable"
+                  >
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Séance</th>
+                        <th>Horaire</th>
+                        <th>Durée</th>
+                        <th>Salles</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="assignmentDetailsList">
+                      <!-- Assignment details will be populated by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              <i class="fas fa-times mr-2"></i>Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div class="modal fade" id="messageModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header" id="messageModalHeader">
+            <h5 class="modal-title" id="messageModalTitle">Information</h5>
+            <button type="button" class="close" data-dismiss="modal">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="messageModalBody"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-warning">
+            <h5 class="modal-title" id="confirmationModalTitle">Confirmation</h5>
+            <button type="button" class="close" data-dismiss="modal">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="confirmationModalBody"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+              <i class="fas fa-times mr-2"></i>Annuler
+            </button>
+            <button type="button" class="btn btn-warning" id="confirmationModalConfirm">
+              <i class="fas fa-check mr-2"></i>Confirmer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+      <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <!-- Custom scripts for all pages-->
+    <script src="js/sb-admin-2.min.js"></script>
+
+    <!-- Page level plugins -->
+    <script src="vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+    <!-- Eel JavaScript -->
+    <script type="text/javascript" src="/eel.js"></script>
+
+    <script>
+      let employeesTable;
+      let examScheduleData = null;
+      let currentTeacherEmail = null;
+      let currentTeacherAssignments = [];
+      let currentTeacherResponsibilities = []; // Store teacher responsibilities (seances they're responsible for)
+      let originalAssignments = []; // Track original state for save detection
+      let hasUnsavedChanges = false;
+      let currentTeacher = null; // Store full teacher data including quota and souhaits
+      let teacherQuota = 0;
+      let teacherUnavailableSlots = new Set(); // Store unavailable time slots from souhaits
+
+      $(document).ready(function () {
+        console.log("Emploi du temps page loaded");
+
+        // Initialize DataTable
+        initializeDataTable();
+
+        // Load teachers data and exam schedule
+        loadTeachersAndSchedule();
+
+        // Event handlers
+        $("#autoAssignBtn").click(function () {
+          runAutoAssignment();
+        });
+
+        $("#clearAllBtn").click(function () {
+          clearAllAssignments();
+        });
+
+        // Save assignments button handler
+        $("#saveAssignmentsBtn").click(function () {
+          saveTeacherAssignments();
+        });
+
+        // Print buttons handlers
+        $("#printAllSchedulesBtn").click(function () {
+          printAllTeacherSchedules();
+        });
+
+        $("#printTeacherScheduleBtn").click(function () {
+          printCurrentTeacherSchedule();
+        });
+
+        // Optional: Reset unsaved changes flag when modal is closed
+        $("#assignmentsModal").on("hidden.bs.modal", function () {
+          hasUnsavedChanges = false;
+          updateSaveButtonState();
+        });
+      });
+
+      function initializeDataTable() {
+        employeesTable = $("#employeesTable").DataTable({
+          pageLength: 25,
+          order: [[1, "asc"]],
+          language: {
+            lengthMenu: "Afficher _MENU_ entrées par page",
+            zeroRecords: "Aucun enseignant trouvé",
+            info: "Affichage de _START_ à _END_ sur _TOTAL_ enseignants",
+            infoEmpty: "Affichage de 0 à 0 sur 0 enseignants",
+            infoFiltered: "(filtré à partir de _MAX_ enseignants au total)",
+            search: "Rechercher:",
+            paginate: {
+              first: "Premier",
+              last: "Dernier",
+              next: "Suivant",
+              previous: "Précédent",
+            },
+          },
+        });
+      }
+
+      function loadTeachersAndSchedule() {
+        // Load both teachers and exam schedule
+        Promise.all([
+          new Promise((resolve) => eel.get_enseignants_list()(resolve)),
+          new Promise((resolve) =>
+            eel.get_exam_schedule_for_souhaits()(resolve),
+          ),
+        ]).then(([teachers, scheduleResult]) => {
+          if (scheduleResult.success) {
+            examScheduleData = scheduleResult;
+          }
+
+          // Get assignments for each teacher
+          const teacherPromises = teachers.map(
+            (teacher) =>
+              new Promise((resolve) =>
+                eel.get_teacher_assignments(teacher.email)((result) => {
+                  teacher.assignments = result.success
+                    ? result.assignments
+                    : [];
+                  resolve(teacher);
+                }),
+              ),
+          );
+
+          Promise.all(teacherPromises).then((teachersWithAssignments) => {
+            displayTeachers(teachersWithAssignments);
+            
+            // Load and display conflicts
+            loadAndDisplayConflicts();
+          });
+        });
+      }
+
+      function displayTeachers(teachers) {
+        employeesTable.clear();
+
+        teachers.forEach(function (teacher) {
+          const codeDisplay = teacher.code ? teacher.code : "-";
+          const surveillanceDisplay = teacher.participe_surveillance
+            ? '<span class="badge badge-success">Oui</span>'
+            : '<span class="badge badge-secondary">Non</span>';
+
+          // Calculate assignment statistics
+          const assignmentCount = teacher.assignments
+            ? teacher.assignments.length
+            : 0;
+          let assignmentDisplay;
+
+          if (assignmentCount > 0) {
+            assignmentDisplay = `<span class="assignment-badge">${assignmentCount}</span>`;
+          } else {
+            assignmentDisplay = '<span class="no-assignment-badge">0</span>';
+          }
+
+          const actionsHtml = `
+            <button class="btn btn-info btn-sm" onclick="viewAssignments('${teacher.email}')" title="Voir l'emploi du temps">
+              <i class="fas fa-calendar-alt"></i>
+            </button>
+          `;
+
+          const row = employeesTable.row.add([
+            actionsHtml,
+            teacher.nom,
+            teacher.prenom,
+            teacher.email,
+            teacher.grade,
+            codeDisplay,
+            surveillanceDisplay,
+            assignmentDisplay,
+          ]);
+
+          // Add styling to row if teacher has assignments
+          if (assignmentCount > 0) {
+            $(row.node()).addClass("teacher-assigned-row");
+          }
+        });
+
+        employeesTable.draw();
+
+        // Update total count
+        $("#totalTeachers").text(teachers.length);
+
+        // Display grade statistics
+        displayGradeStatistics(teachers);
+      }
+
+      function displayGradeStatistics(teachers) {
+        // Get configuration for grade quotas
+        eel.get_configuration()(function (config) {
+          const gradeQuotas = {};
+          
+          if (config.success && config.configuration && config.configuration.configured_grades) {
+            Object.assign(gradeQuotas, config.configuration.configured_grades);
+          }
+
+          // Calculate statistics by grade
+          const gradeStats = {};
+
+          teachers.forEach(function (teacher) {
+            // Skip teachers who don't participate in surveillance
+            if (!teacher.participe_surveillance) {
+              return;
+            }
+            
+            const grade = teacher.grade || 'Non défini';
+            
+            if (!gradeStats[grade]) {
+              gradeStats[grade] = {
+                quota: gradeQuotas[grade] || 0,
+                teacherCount: 0,
+                totalAssignments: 0,
+                teachers: []
+              };
+            }
+
+            gradeStats[grade].teacherCount++;
+            const assignmentCount = teacher.assignments ? teacher.assignments.length : 0;
+            gradeStats[grade].totalAssignments += assignmentCount;
+            gradeStats[grade].teachers.push({
+              name: `${teacher.prenom} ${teacher.nom}`,
+              assignments: assignmentCount
+            });
+          });
+
+          // Populate the grade statistics table
+          const gradeStatsBody = $("#gradeStatsBody");
+          gradeStatsBody.empty();
+
+          if (Object.keys(gradeStats).length === 0) {
+            gradeStatsBody.append(
+              '<tr><td colspan="6" class="text-center text-muted">Aucune donnée disponible</td></tr>'
+            );
+            return;
+          }
+
+          // Sort grades for consistent display
+          const sortedGrades = Object.keys(gradeStats).sort();
+
+          sortedGrades.forEach(function (grade) {
+            const stats = gradeStats[grade];
+            const maxAssigned = stats.teachers.length > 0 ? Math.max(...stats.teachers.map(t => t.assignments)) : 0;
+            const maxPossible = stats.quota * stats.teacherCount;
+            const utilization = maxPossible > 0 ? ((stats.totalAssignments / maxPossible) * 100) : 0;
+
+            // Create progress bar for utilization
+            let utilizationClass = 'bg-success';
+            if (utilization >= 90) {
+              utilizationClass = 'bg-danger';
+            } else if (utilization >= 70) {
+              utilizationClass = 'bg-warning';
+            }
+
+            const utilizationBar = `
+              <div class="progress" style="height: 20px;">
+                <div class="progress-bar ${utilizationClass}" role="progressbar" 
+                     style="width: ${Math.min(utilization, 100)}%" 
+                     aria-valuenow="${utilization.toFixed(1)}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                  ${utilization.toFixed(1)}%
+                </div>
+              </div>
+            `;
+
+            const row = `
+              <tr>
+                <td><strong>${grade}</strong></td>
+                <td class="text-center">${stats.quota}</td>
+                <td class="text-center">${stats.teacherCount}</td>
+                <td class="text-center">${stats.totalAssignments}</td>
+                <td class="text-center"><strong>${maxAssigned}</strong></td>
+                <td>${utilizationBar}</td>
+              </tr>
+            `;
+
+            gradeStatsBody.append(row);
+          });
+        });
+      }
+
+      function loadAndDisplayConflicts() {
+        eel.get_all_assignment_conflicts()(function(result) {
+          if (result.success && result.conflicts && result.conflicts.length > 0) {
+            displayConflictWarning(result.conflicts);
+          } else {
+            hideConflictWarning();
+          }
+        });
+      }
+
+      function displayConflictWarning(conflicts) {
+        const conflictList = $("#conflictList");
+        conflictList.empty();
+        
+        conflicts.forEach(function(conflict) {
+          const conflictItem = `
+            <div class="mb-1">
+              <strong>${conflict.teacher_name}</strong> (${conflict.grade}) - 
+              Jour ${conflict.day}, Séance ${conflict.seance}
+            </div>
+          `;
+          conflictList.append(conflictItem);
+        });
+        
+        $("#conflictWarningBanner").show();
+      }
+
+      function hideConflictWarning() {
+        $("#conflictWarningBanner").hide();
+      }
+
+      function viewAssignments(email) {
+        currentTeacherEmail = email;
+
+        // Get teacher info
+        eel.get_enseignants_list()(function (teachers) {
+          const teacher = teachers.find((t) => t.email === email);
+          if (!teacher) {
+            console.error("Enseignant introuvable");
+            return;
+          }
+
+          currentTeacher = teacher;
+          $("#assignmentsTeacherName").text(`${teacher.prenom} ${teacher.nom}`);
+
+          // Load teacher quota, souhaits, and responsibilities data
+          Promise.all([
+            new Promise((resolve) =>
+              eel.get_teacher_assignments(email)(resolve),
+            ),
+            new Promise((resolve) =>
+              eel.get_enseignant_souhaits(email)(resolve),
+            ),
+            new Promise((resolve) =>
+              eel.get_teacher_responsibilities(email)(resolve),
+            ),
+          ]).then(([assignmentResult, souhaitsResult, responsibilitiesResult]) => {
+            if (assignmentResult.success) {
+              currentTeacherAssignments = assignmentResult.assignments;
+              originalAssignments = assignmentResult.assignments.slice(); // Create a copy
+              hasUnsavedChanges = false;
+
+              // Load teacher responsibilities for marking in calendar
+              currentTeacherResponsibilities = [];
+              if (responsibilitiesResult.success) {
+                currentTeacherResponsibilities = responsibilitiesResult.responsibilities || [];
+              }
+
+              // Load unavailable slots from souhaits
+              loadTeacherUnavailableSlots(souhaitsResult);
+
+              // Load teacher quota and THEN display assignments
+              loadTeacherQuotaAndDisplay(teacher, assignmentResult.assignments);
+
+              updateSaveButtonState();
+            } else {
+              console.error("Impossible de charger les assignements");
+            }
+          });
+        });
+      }
+
+      function displayTeacherAssignments(assignments) {
+        // Update summary statistics
+        const totalAssignments = assignments.length;
+        const uniqueDates = new Set();
+
+        assignments.forEach((assignment) => {
+          uniqueDates.add(assignment.date);
+        });
+
+        $("#totalAssignments").text(totalAssignments);
+        $("#uniqueDates").text(uniqueDates.size);
+
+        // Calculate conflicts (assignments where teacher marked as unavailable)
+        // We'll get this from the teacher's conflicts data
+        eel.get_enseignants_list()(function (teachers) {
+          const teacher = teachers.find((t) => t.email === currentTeacherEmail);
+          const conflicts =
+            teacher && teacher.conflicts ? teacher.conflicts.length : 0;
+          $("#totalConflicts").text(conflicts);
+        });
+
+        // Update quota display
+        updateQuotaDisplay();
+
+        // Build exam calendar
+        buildAssignmentCalendar(assignments);
+
+        // Build assignment details table
+        buildAssignmentDetailsTable(assignments);
+      }
+
+      function buildAssignmentCalendar(assignments) {
+        const calendarContainer = $("#examCalendar");
+        calendarContainer.empty();
+
+        if (
+          !examScheduleData ||
+          !examScheduleData.dates ||
+          examScheduleData.dates.length === 0
+        ) {
+          calendarContainer.html(
+            '<p class="text-muted">Aucune date d\'examen disponible</p>',
+          );
+          return;
+        }
+
+        calendarContainer.addClass("exam-calendar");
+
+        // Create assignment lookup with conflict status
+        const assignmentLookup = new Map();
+        assignments.forEach((assignment) => {
+          const key = `${assignment.day_number}-${assignment.seance_number}`;
+          assignmentLookup.set(key, {
+            assigned: true,
+            is_conflict: assignment.is_conflict || false
+          });
+        });
+
+        examScheduleData.dates.forEach((date, dayIndex) => {
+          const dateDiv = $('<div class="exam-date"></div>');
+
+          // Date header
+          const dateHeader = $(`<h6>${date}</h6>`);
+          dateDiv.append(dateHeader);
+
+          // Sessions grid
+          const sessionsGrid = $('<div class="session-grid"></div>');
+
+          const sessionsForDate = examScheduleData.sessions_by_date[date] || [];
+
+          if (sessionsForDate.length === 0) {
+            sessionsGrid.append(
+              '<div class="session-slot no-exam">Pas d\'examen</div>',
+            );
+          } else {
+            sessionsForDate.forEach((session, sessionIndex) => {
+              const dayNumber = dayIndex + 1;
+              const seanceNumber = sessionIndex + 1;
+              const assignmentKey = `${dayNumber}-${seanceNumber}`;
+
+              const assignmentData = assignmentLookup.get(assignmentKey);
+              const isAssigned = assignmentData ? assignmentData.assigned : false;
+              const isConflictFromData = assignmentData ? assignmentData.is_conflict : false;
+              const isUnavailable = teacherUnavailableSlots.has(assignmentKey);
+              
+              // Check if this assignment is a conflict (assigned but teacher is unavailable)
+              const isConflict = isAssigned && (isConflictFromData || isUnavailable);
+              
+              // Check if teacher is responsible for this session
+              const isResponsible = currentTeacherResponsibilities.some(responsibility => 
+                responsibility.day_number === dayNumber && 
+                responsibility.seance_number === seanceNumber
+              );
+
+              let slotClass, title, clickHandler;
+
+              if (isAssigned && isConflict) {
+                slotClass = "assigned conflict";
+                title = "Assigné (CONFLIT - Non disponible) - Cliquer pour désassigner";
+                clickHandler = () =>
+                  toggleSeanceAssignment(dayNumber, seanceNumber, slot);
+              } else if (isAssigned) {
+                slotClass = "assigned";
+                title = "Assigné - Cliquer pour désassigner";
+                clickHandler = () =>
+                  toggleSeanceAssignment(dayNumber, seanceNumber, slot);
+              } else if (isUnavailable) {
+                slotClass = "unavailable";
+                title = "Non disponible - Cliquer pour forcer l'assignement";
+                clickHandler = () =>
+                  toggleSeanceAssignment(dayNumber, seanceNumber, slot);
+              } else {
+                slotClass = "not-assigned";
+                title = "Non assigné - Cliquer pour assigner";
+                clickHandler = () =>
+                  toggleSeanceAssignment(dayNumber, seanceNumber, slot);
+              }
+              
+              // Add responsible class if teacher is responsible
+              if (isResponsible) {
+                slotClass += ' responsible';
+                title += ' (Vous êtes responsable)';
+              }
+
+              const slot = $(`
+                <div class="session-slot ${slotClass}"
+                     data-day="${dayNumber}" data-seance="${seanceNumber}">
+                  <span class="session-time">${session.h_debut} - ${session.h_fin}</span>
+                  <span class="session-name">${session.name}</span>
+                </div>
+              `);
+
+              slot.attr("title", title);
+
+              // Add click handler only if not unavailable
+              if (clickHandler) {
+                slot.click(clickHandler);
+              }
+
+              sessionsGrid.append(slot);
+            });
+          }
+
+          dateDiv.append(sessionsGrid);
+          calendarContainer.append(dateDiv);
+        });
+      }
+
+      function buildAssignmentDetailsTable(assignments) {
+        const tableBody = $("#assignmentDetailsList");
+        tableBody.empty();
+
+        if (assignments.length === 0) {
+          tableBody.append(
+            '<tr><td colspan="6" class="text-center text-muted">Aucun assignement</td></tr>',
+          );
+          return;
+        }
+
+        assignments.forEach((assignment) => {
+          const statusBadge =
+            '<span class="badge badge-success">Assigné</span>';
+          const rooms =
+            assignment.rooms && assignment.rooms.length > 0
+              ? assignment.rooms.join(", ")
+              : "N/A";
+
+          const row = `
+            <tr>
+              <td>${assignment.date}</td>
+              <td>S${assignment.seance_number}</td>
+              <td>${assignment.h_debut} - ${assignment.h_fin}</td>
+              <td>${rooms}</td>
+              <td>${statusBadge}</td>
+            </tr>
+          `;
+
+          tableBody.append(row);
+        });
+      }
+
+      function showMessageModal(title, message, type) {
+        // Set modal colors based on type
+        const modalHeader = $("#messageModalHeader");
+        const modalTitle = $("#messageModalTitle");
+        const modalBody = $("#messageModalBody");
+
+        // Reset classes
+        modalHeader.removeClass("bg-success bg-danger bg-warning bg-info");
+
+        // Set appropriate styling
+        switch (type) {
+          case "success":
+            modalHeader.addClass("bg-success text-white");
+            break;
+          case "danger":
+            modalHeader.addClass("bg-danger text-white");
+            break;
+          case "warning":
+            modalHeader.addClass("bg-warning");
+            break;
+          case "info":
+            modalHeader.addClass("bg-info text-white");
+            break;
+        }
+
+        modalTitle.text(title);
+        modalBody.html(message);
+        $("#messageModal").modal("show");
+      }
+
+      function showConfirmationModal(title, message, onConfirm, isDangerous = false) {
+        $("#confirmationModalTitle").text(title);
+        $("#confirmationModalBody").html(message);
+        
+        // Remove any existing click handlers
+        $("#confirmationModalConfirm").off('click');
+        
+        // Update button styling based on whether this is a dangerous action
+        const confirmBtn = $("#confirmationModalConfirm");
+        if (isDangerous) {
+          confirmBtn.removeClass("btn-warning").addClass("btn-danger");
+          confirmBtn.html('<i class="fas fa-trash mr-2"></i>Supprimer');
+        } else {
+          confirmBtn.removeClass("btn-danger").addClass("btn-warning");
+          confirmBtn.html('<i class="fas fa-check mr-2"></i>Confirmer');
+        }
+        
+        // Add the new click handler
+        confirmBtn.on('click', function() {
+          $("#confirmationModal").modal("hide");
+          if (onConfirm && typeof onConfirm === 'function') {
+            onConfirm();
+          }
+        });
+        
+        $("#confirmationModal").modal("show");
+      }
+
+      function toggleSeanceAssignment(day, seance, slotElement) {
+        if (!currentTeacherEmail) {
+          console.error("Aucun enseignant sélectionné");
+          return;
+        }
+
+        const assignmentKey = `${day}-${seance}`;
+        const isCurrentlyAssigned = slotElement.hasClass("assigned");
+        const isUnavailable = teacherUnavailableSlots.has(assignmentKey);
+
+        // Check if teacher is responsible for this session
+        const isResponsible = currentTeacherResponsibilities.some(responsibility => 
+          responsibility.day_number === day && 
+          responsibility.seance_number === seance
+        );
+
+        if (isCurrentlyAssigned) {
+          // Remove assignment
+          currentTeacherAssignments = currentTeacherAssignments.filter(
+            (assignment) =>
+              !(
+                assignment.day_number === day &&
+                assignment.seance_number === seance
+              ),
+          );
+
+          // Update UI
+          slotElement.removeClass("assigned conflict").addClass("not-assigned");
+          const responsibleText = isResponsible ? ' (Vous êtes responsable)' : '';
+          
+          if (isUnavailable) {
+            slotElement.addClass("unavailable");
+            slotElement.attr("title", "Non disponible - Cliquer pour forcer l'assignement" + responsibleText);
+          } else {
+            slotElement.attr("title", "Non assigné - Cliquer pour assigner" + responsibleText);
+          }
+        } else {
+          // Handle assignment (including to unavailable slots)
+          let shouldProceed = true;
+          let forceUnavailable = false;
+          
+          // If unavailable, proceed without confirmation
+          if (isUnavailable) {
+            forceUnavailable = true;
+          }
+
+          // Check quota before adding assignment (only if quota is set and > 0)
+          if (
+            teacherQuota > 0 &&
+            currentTeacherAssignments.length >= teacherQuota
+          ) {
+            console.error(
+              "Quota atteint, impossible d'ajouter plus d'assignations",
+            );
+            return;
+          }
+
+          // Add assignment
+          const sessionData = examScheduleData.sessions_by_date;
+          const date = examScheduleData.dates[day - 1];
+          const sessions = sessionData[date];
+
+          if (sessions && sessions[seance - 1]) {
+            const session = sessions[seance - 1];
+
+            const newAssignment = {
+              day_index: day - 1,
+              seance_index: seance - 1,
+              day_number: day,
+              seance_number: seance,
+              date: date,
+              seance_name: `S${seance}`,
+              h_debut: session.h_debut,
+              h_fin: session.h_fin,
+              rooms: session.salles || [],
+              is_conflict: isUnavailable
+            };
+
+            currentTeacherAssignments.push(newAssignment);
+
+            // Update UI based on conflict status
+            slotElement.removeClass("not-assigned unavailable");
+            
+            if (isUnavailable) {
+              slotElement.addClass("assigned conflict");
+              slotElement.attr("title", "Assigné (CONFLIT - Non disponible) - Cliquer pour désassigner" + (isResponsible ? ' (Vous êtes responsable)' : ''));
+            } else {
+              slotElement.addClass("assigned");
+              slotElement.attr("title", "Assigné - Cliquer pour désassigner" + (isResponsible ? ' (Vous êtes responsable)' : ''));
+            }
+          }
+        }
+
+        // Ensure responsible class is maintained if teacher is responsible
+        if (isResponsible && !slotElement.hasClass('responsible')) {
+          slotElement.addClass('responsible');
+        }
+
+        // Update statistics and mark as having unsaved changes
+        hasUnsavedChanges = true;
+        updateSaveButtonState();
+        updateAssignmentStatistics();
+        updateQuotaDisplay(); // Explicitly update quota display
+        buildAssignmentDetailsTable(currentTeacherAssignments);
+      }
+
+      function updateSaveButtonState() {
+        const saveBtn = $("#saveAssignmentsBtn");
+        const indicator = $("#unsavedChangesIndicator");
+
+        if (hasUnsavedChanges) {
+          saveBtn.removeClass("btn-success").addClass("btn-warning");
+          saveBtn.html(
+            '<i class="fas fa-exclamation-triangle mr-2"></i>Sauvegarder les Changements',
+          );
+          saveBtn.prop("disabled", false);
+          indicator.show();
+        } else {
+          saveBtn.removeClass("btn-warning").addClass("btn-success");
+          saveBtn.html('<i class="fas fa-save mr-2"></i>Pas de Changements');
+          saveBtn.prop("disabled", true);
+          indicator.hide();
+        }
+      }
+
+      function loadTeacherQuota(teacher) {
+        console.log(
+          `Chargement du quota pour l'enseignant: ${teacher.prenom} ${teacher.nom}, grade: ${teacher.grade}`,
+        );
+
+        // Get teacher quota from configuration
+        eel.get_configuration()(function (config) {
+          console.log("Configuration response:", config);
+
+          if (config.success && teacher.grade && config.grade_hours) {
+            teacherQuota = config.grade_hours[teacher.grade] || 0;
+            console.log(
+              `Found quota for grade ${teacher.grade}: ${teacherQuota}`,
+            );
+          } else {
+            teacherQuota = 0;
+            console.log(
+              `No quota found for grade ${teacher.grade}, setting to 0`,
+            );
+          }
+          updateQuotaDisplay();
+        });
+      }
+
+      function loadTeacherQuotaAndDisplay(teacher, assignments) {
+        console.log(
+          `Chargement du quota pour l'enseignant: ${teacher.prenom} ${teacher.nom}, grade: ${teacher.grade}`,
+        );
+
+        // Get teacher quota from configuration
+        eel.get_configuration()(function (config) {
+          console.log("Configuration response:", config);
+
+          if (config.success && teacher.grade && config.configuration && config.configuration.configured_grades) {
+            teacherQuota = config.configuration.configured_grades[teacher.grade] || 0;
+            console.log(
+              `Found quota for grade ${teacher.grade}: ${teacherQuota}`,
+            );
+          } else {
+            teacherQuota = 0;
+            console.log(
+              `No quota found for grade ${teacher.grade}, setting to 0. Config structure:`,
+              config
+            );
+          }
+          
+          // Now display assignments with correct quota
+          displayTeacherAssignments(assignments);
+          $("#assignmentsModal").modal("show");
+        });
+      }
+
+      function loadTeacherUnavailableSlots(souhaitsResult) {
+        teacherUnavailableSlots.clear();
+
+        if (
+          souhaitsResult.success &&
+          souhaitsResult.souhaits &&
+          souhaitsResult.souhaits.unavailable_slots
+        ) {
+          souhaitsResult.souhaits.unavailable_slots.forEach((slot) => {
+            const [day, seance] = slot;
+            teacherUnavailableSlots.add(`${day}-${seance}`);
+          });
+        }
+      }
+
+      function updateQuotaDisplay() {
+        const currentAssignments = currentTeacherAssignments.length;
+        const percentage =
+          teacherQuota > 0 ? (currentAssignments / teacherQuota) * 100 : 0;
+
+        console.log(
+          `Updating quota display: ${currentAssignments} assignments, quota: ${teacherQuota}, percentage: ${percentage}%`,
+        );
+
+        const progressBar = $("#quotaProgressBar");
+        const quotaText = $("#quotaText");
+        const quotaDisplay = $("#quotaDisplay");
+        const quotaStatus = $("#quotaStatus");
+
+        // Update progress bar
+        progressBar.css("width", Math.min(percentage, 100) + "%");
+        progressBar.attr("aria-valuenow", currentAssignments);
+        progressBar.attr("aria-valuemax", teacherQuota);
+
+        // Update text - but preserve the original quota if we had one
+        quotaText.text(`${currentAssignments}/${teacherQuota}`);
+        quotaDisplay.text(`${currentAssignments}/${teacherQuota}`);
+
+        // Handle case when quota is 0 or not set
+        if (teacherQuota === 0 || isNaN(teacherQuota)) {
+          progressBar
+            .removeClass("bg-warning bg-success bg-danger")
+            .addClass("bg-info");
+          progressBar.css("width", "100%");
+          quotaStatus.text("Quota illimité ou non configuré");
+        } else if (percentage >= 100) {
+          progressBar
+            .removeClass("bg-warning bg-success bg-secondary")
+            .addClass("bg-danger");
+          quotaStatus.text(
+            "Quota atteint - Aucune nouvelle assignation possible",
+          );
+        } else if (percentage >= 80) {
+          progressBar
+            .removeClass("bg-success bg-danger bg-secondary")
+            .addClass("bg-warning");
+          quotaStatus.text(`Proche du quota (${Math.round(percentage)}%)`);
+        } else {
+          progressBar
+            .removeClass("bg-warning bg-danger bg-secondary")
+            .addClass("bg-success");
+          quotaStatus.text(
+            `Peut encore accepter ${teacherQuota - currentAssignments} assignation(s)`,
+          );
+        }
+      }
+
+      function updateAssignmentStatistics() {
+        const totalAssignments = currentTeacherAssignments.length;
+        const uniqueDates = new Set(
+          currentTeacherAssignments.map((a) => a.date),
+        );
+
+        $("#totalAssignments").text(totalAssignments);
+        $("#uniqueDates").text(uniqueDates.size);
+
+        console.log(
+          `Updating statistics: ${totalAssignments} assignments, quota: ${teacherQuota}`,
+        );
+
+        // Update quota display
+        updateQuotaDisplay();
+      }
+
+      function saveTeacherAssignments() {
+        if (!hasUnsavedChanges) {
+          console.log("Aucun changement à sauvegarder");
+          return;
+        }
+
+        const saveBtn = $("#saveAssignmentsBtn");
+        saveBtn
+          .prop("disabled", true)
+          .html('<i class="fas fa-spinner fa-spin mr-2"></i>Sauvegarde...');
+
+        // Execute the assignments using the toggle function
+        let updatePromises = [];
+
+        // Handle removals first
+        originalAssignments.forEach((originalAssignment) => {
+          const stillAssigned = currentTeacherAssignments.some(
+            (current) =>
+              current.day_number === originalAssignment.day_number &&
+              current.seance_number === originalAssignment.seance_number,
+          );
+
+          if (!stillAssigned) {
+            // This assignment was removed
+            updatePromises.push(
+              new Promise((resolve) => {
+                eel.toggle_teacher_assignment_for_seance(
+                  currentTeacherEmail,
+                  originalAssignment.day_number,
+                  originalAssignment.seance_number,
+                  false,
+                )(resolve);
+              }),
+            );
+          }
+        });
+
+        // Handle additions
+        currentTeacherAssignments.forEach((currentAssignment) => {
+          const wasOriginal = originalAssignments.some(
+            (original) =>
+              original.day_number === currentAssignment.day_number &&
+              original.seance_number === currentAssignment.seance_number,
+          );
+
+          if (!wasOriginal) {
+            // This is a new assignment - check if it's a conflict
+            const isConflict = currentAssignment.is_conflict === true;
+            updatePromises.push(
+              new Promise((resolve) => {
+                eel.toggle_teacher_assignment_for_seance(
+                  currentTeacherEmail,
+                  currentAssignment.day_number,
+                  currentAssignment.seance_number,
+                  true,
+                  isConflict // Pass force_unavailable flag for conflicts
+                )(resolve);
+              }),
+            );
+          }
+        });
+
+        Promise.all(updatePromises).then((results) => {
+          let hasErrors = false;
+          let errorMessages = [];
+
+          results.forEach((result) => {
+            if (!result.success) {
+              hasErrors = true;
+              errorMessages.push(result.error);
+              console.error("Erreur lors de la sauvegarde:", result.error);
+            }
+          });
+
+          if (hasErrors) {
+            console.error("Erreurs lors de la sauvegarde:", errorMessages);
+          } else {
+            console.log("Assignements sauvegardés avec succès");
+            originalAssignments = currentTeacherAssignments.slice(); // Update original state
+            hasUnsavedChanges = false;
+            updateSaveButtonState();
+
+            // Refresh the main table to show updated assignment counts
+            loadTeachersAndSchedule();
+          }
+
+          saveBtn.prop("disabled", false);
+          updateSaveButtonState();
+        });
+      }
+
+      function runAutoAssignment() {
+        showConfirmationModal(
+          'Assignement Automatique',
+          'Êtes-vous sûr de vouloir lancer l\'assignement automatique ? Cela peut modifier les assignements existants.',
+          function() {
+            const btn = $('#autoAssignBtn');
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+            
+            eel.auto_assign_teachers()(function(result) {
+              btn.prop('disabled', false).html('<i class="fas fa-magic"></i> Auto-Attribution');
+              
+              if (result.success) {
+                // Don't show success modal as requested
+                console.log('Assignement automatique terminé: ' + result.message);
+              } else {
+                showMessageModal('Erreur', 'Erreur lors de l\'assignement automatique:<br>' + result.error, 'danger');
+              }
+              
+              // Refresh data to show current state
+              loadTeachersAndSchedule();
+            });
+          }
+        );
+      }
+
+      function clearAllAssignments() {
+        showConfirmationModal(
+          'Supprimer Tous les Assignements',
+          '<strong>Êtes-vous sûr de vouloir supprimer TOUS les assignements ?</strong><br><br><span class="text-danger">Cette action est irréversible !</span>',
+          function() {
+            eel.clear_all_assignments()(function(result) {
+              if (result.success) {
+                // Show success modal for clear all action
+                showMessageModal('Succès', 'Tous les assignements ont été supprimés avec succès.', 'success');
+              } else {
+                showMessageModal('Erreur', 'Erreur lors de la suppression:<br>' + result.error, 'danger');
+              }
+              
+              // Refresh all data
+              loadTeachersAndSchedule();
+            });
+          },
+          true  // Mark as dangerous action
+        );
+      }
+
+      function printAllTeacherSchedules() {
+        const btn = $('#printAllSchedulesBtn');
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Génération...');
+        
+        eel.generate_all_teacher_schedules()(function(result) {
+          btn.prop('disabled', false).html('<i class="fas fa-file-archive"></i> Télécharger Tout (ZIP)');
+          
+          if (result.success) {
+            console.log(`${result.generated_count} emplois du temps générés avec succès et packagés dans un fichier ZIP.`);
+            
+            if (result.zip_download) {
+              // Auto-download the ZIP file
+              downloadFile(result.zip_download.url, result.zip_download.filename);
+            }
+          } else {
+            showMessageModal('Erreur', `Erreur lors de la génération des emplois du temps:<br>${result.error}`, 'danger');
+          }
+        });
+      }
+
+      function printCurrentTeacherSchedule() {
+        if (!currentTeacherEmail) {
+          showMessageModal('Erreur', 'Aucun enseignant sélectionné', 'danger');
+          return;
+        }
+
+        if (!currentTeacher) {
+          showMessageModal('Erreur', 'Informations de l\'enseignant non disponibles', 'danger');
+          return;
+        }
+
+        const btn = $('#printTeacherScheduleBtn');
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Génération...');
+        
+        // Create a safe filename for the teacher
+        const teacherName = `${currentTeacher.prenom}_${currentTeacher.nom}`.replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `emploi_${teacherName}.pdf`;
+        
+        eel.generate_teacher_schedule_report(currentTeacherEmail, fileName)(function(result) {
+          btn.prop('disabled', false).html('<i class="fas fa-print mr-2"></i>Imprimer Emploi');
+          
+          if (result.success) {
+            // Create download link for the generated PDF
+            downloadFile(result.output_path, fileName);
+          } else {
+            showMessageModal('Erreur', `Erreur lors de la génération de l'emploi du temps:<br>${result.error}`, 'danger');
+          }
+        });
+      }
+
+      function downloadFile(filePath, fileName) {
+        // Create a temporary link to trigger download
+        const link = document.createElement('a');
+        link.href = filePath.replace(/\\/g, '/'); // Normalize path separators
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    </script>
+  </body>
+</html>

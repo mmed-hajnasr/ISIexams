@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+
+    <title>Séances - Gestion des Examens ISI</title>
+
+    <!-- Custom fonts for this template-->
+    <link
+      href="vendor/fontawesome-free/css/all.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+      rel="stylesheet"
+    />
+
+    <!-- Custom styles for this template-->
+    <link href="css/sb-admin-2.min.css" rel="stylesheet" />
+
+    <!-- Custom styles for this page -->
+    <link
+      href="vendor/datatables/dataTables.bootstrap4.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Custom styles for modals -->
+    <style>
+      .modal-content.border-success {
+        border-color: #28a745 !important;
+      }
+      .modal-content.border-danger {
+        border-color: #dc3545 !important;
+      }
+      .modal-content.border-warning {
+        border-color: #ffc107 !important;
+      }
+      .teacher-input,
+      .room-input,
+      .edit-teacher-input,
+      .edit-room-input {
+        margin-bottom: 0.5rem;
+      }
+      .badge {
+        font-size: 0.9rem;
+      }
+      .badge .btn {
+        color: rgba(255, 255, 255, 0.8) !important;
+        padding: 0 !important;
+        margin-left: 5px !important;
+      }
+      .badge .btn:hover {
+        color: white !important;
+      }
+      #teachersContainer,
+      #roomsContainer,
+      #editTeachersContainer,
+      #editRoomsContainer {
+        min-height: 40px;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+        padding: 8px;
+        background-color: #f8f9fc;
+      }
+
+      /* Calendar Styles */
+      .calendar-container {
+        background-color: #f8f9fc;
+        border-radius: 0.35rem;
+        padding: 20px;
+        border: 1px solid #e3e6f0;
+      }
+
+      .calendar-grid {
+        background-color: white;
+        border-radius: 0.35rem;
+        overflow: hidden;
+        border: 1px solid #e3e6f0;
+      }
+
+      .calendar-days-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        background-color: #5a5c69;
+        color: white;
+      }
+
+      .calendar-day-header {
+        padding: 10px;
+        text-align: center;
+        font-weight: bold;
+        font-size: 0.875rem;
+      }
+
+      .calendar-days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        grid-gap: 1px;
+        background-color: #e3e6f0;
+      }
+
+      .calendar-day {
+        background-color: white;
+        padding: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .calendar-day:hover {
+        background-color: #f1f3f4;
+      }
+
+      .calendar-day.other-month {
+        color: #ccc;
+        background-color: #f8f9fc;
+      }
+
+      .calendar-day.selected-date {
+        background-color: #4e73df !important;
+        color: white;
+        font-weight: bold;
+      }
+
+      .calendar-day.clicked-date {
+        background-color: #f6c23e !important;
+        color: #5a5c69;
+        font-weight: bold;
+      }
+
+      .calendar-day.today {
+        border: 2px solid #28a745;
+        font-weight: bold;
+      }
+
+      .calendar-legend-box {
+        width: 15px;
+        height: 15px;
+        border-radius: 2px;
+        display: inline-block;
+      }
+
+      /* Seance table header button styling */
+      .card-header .btn-group {
+        white-space: nowrap;
+      }
+
+      .card-header .float-right .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+      }
+    </style>
+  </head>
+
+  <body id="page-top">
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+      <!-- Sidebar -->
+      <ul
+        class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion"
+        id="accordionSidebar"
+      >
+        <!-- Sidebar - Brand -->
+        <a
+          class="sidebar-brand d-flex align-items-center justify-content-center"
+          href="seances.html"
+        >
+          <img src="img/isi-logo.png" style="width: 50px; height: 50px" />
+        </a>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider my-0" />
+
+        <!-- Nav Item - Dashboard -->
+        <li class="nav-item active">
+          <a class="nav-link" href="seances.html">
+            <i class="fas fa-fw fa-calendar"></i>
+            <span>Séances</span></a
+          >
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="enseignants.html">
+            <i class="fas fa-fw fa-user"></i>
+            <span>Enseignants</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="configuration.html">
+            <i class="fas fa-fw fa-cog"></i>
+            <span>Paramètres</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider" />
+        <!-- Heading -->
+        <div class="sidebar-heading">Génération</div>
+
+        <li class="nav-item">
+          <a class="nav-link" href="assignements.html">
+            <i class="fas fa-fw fa-users"></i>
+            <span>Assignements</span></a
+          >
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="emploi.html">
+            <i class="fas fa-fw fa-calendar-check"></i>
+            <span>Emplois du Temps</span></a
+          >
+        </li>
+
+        <!-- Nav Item - Pages Collapse Menu -->
+      </ul>
+      <!-- End of Sidebar -->
+
+      <div id="content-wrapper" class="d-flex flex-column">
+        <!-- Main Content -->
+        <div id="content">
+          <!-- Begin Page Content -->
+          <div class="container-fluid">
+            <!-- Page Heading -->
+            <div class="mb-3"></div>
+            <div
+              class="d-sm-flex align-items-center justify-content-between mb-4"
+            >
+              <h1 class="h3 mb-0 text-gray-800">Séances</h1>
+              <div class="btn-group" role="group">
+                <button
+                  onclick="importSeances()"
+                  class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm"
+                >
+                  <i class="fas fa-upload fa-sm text-white-50"></i> Importer
+                  depuis un fichier CSV/XLSX
+                </button>
+                <button
+                  onclick="clearAllSeances()"
+                  class="d-none d-sm-inline-block btn btn-sm btn-danger shadow-sm ml-2"
+                >
+                  <i class="fas fa-trash fa-sm text-white-50"></i> Effacer tout
+                </button>
+              </div>
+            </div>
+
+            <!-- Content Row -->
+
+            <!-- Calendar and Date Selection Card -->
+            <div class="card shadow mb-4">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                  Calendrier des Dates d'Examen
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <!-- Calendar Section -->
+                  <div class="col-md-8">
+                    <div class="calendar-container">
+                      <div
+                        class="calendar-header d-flex justify-content-between align-items-center mb-3"
+                      >
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary btn-sm"
+                          onclick="previousMonth()"
+                        >
+                          <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h5 id="calendarMonthYear" class="mb-0"></h5>
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary btn-sm"
+                          onclick="nextMonth()"
+                        >
+                          <i class="fas fa-chevron-right"></i>
+                        </button>
+                      </div>
+                      <div class="calendar-grid">
+                        <div class="calendar-days-header">
+                          <div class="calendar-day-header">Dim</div>
+                          <div class="calendar-day-header">Lun</div>
+                          <div class="calendar-day-header">Mar</div>
+                          <div class="calendar-day-header">Mer</div>
+                          <div class="calendar-day-header">Jeu</div>
+                          <div class="calendar-day-header">Ven</div>
+                          <div class="calendar-day-header">Sam</div>
+                        </div>
+                        <div id="calendarDays" class="calendar-days">
+                          <!-- Calendar days will be generated here -->
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Control Section -->
+                  <div class="col-md-4">
+                    <div class="border-left pl-3">
+                      <h6 class="font-weight-bold text-secondary mb-3">
+                        Actions sur les Dates
+                      </h6>
+
+                      <div class="mb-3">
+                        <div
+                          id="selectedDateInfo"
+                          class="alert alert-info"
+                          style="display: none"
+                        >
+                          <strong>Sélectionnée:</strong>
+                          <span id="selectedDateText"></span>
+                        </div>
+                      </div>
+
+                      <div class="btn-group-vertical w-100" id="dateActions">
+                        <button
+                          type="button"
+                          class="btn btn-primary mb-2"
+                          id="selectDateBtn"
+                          onclick="selectCurrentDate()"
+                          disabled
+                        >
+                          <i class="fas fa-plus"></i> Ajouter la Date
+                          Sélectionnée
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-success mb-2"
+                          id="showSeancesBtn"
+                          onclick="showSeancesForDate()"
+                          style="display: none"
+                        >
+                          <i class="fas fa-eye"></i> Afficher les Séances
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-danger mb-2"
+                          id="removeDateBtn"
+                          onclick="removeSelectedDate()"
+                          style="display: none"
+                        >
+                          <i class="fas fa-trash"></i> Supprimer la Date
+                        </button>
+                      </div>
+
+                      <div class="mt-4">
+                        <h6 class="font-weight-bold text-secondary">Légende</h6>
+                        <div class="d-flex align-items-center mb-1">
+                          <div class="calendar-legend-box bg-primary"></div>
+                          <small class="ml-2">Dates Sélectionnées</small>
+                        </div>
+                        <div class="d-flex align-items-center mb-1">
+                          <div class="calendar-legend-box bg-warning"></div>
+                          <small class="ml-2">Actuellement Cliquée</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Seances Tables Container -->
+            <div id="seancesContainer">
+              <!-- Tables for each selected date will be dynamically generated here -->
+            </div>
+          </div>
+          <!-- /.container-fluid -->
+        </div>
+        <!-- End of Main Content -->
+
+        <!-- Footer -->
+        <footer class="sticky-footer bg-white">
+          <div class="container my-auto">
+            <div class="copyright text-center my-auto">
+              <span>Copyright &copy; ISI Examens 2024</span>
+            </div>
+          </div>
+        </footer>
+        <!-- End of Footer -->
+      </div>
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+      <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- Add Seance Modal -->
+    <div
+      class="modal fade"
+      id="addSeanceModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="addSeanceModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addSeanceModalLabel">
+              Ajouter une Nouvelle Séance
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="addSeanceForm">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="seanceStartTime">Heure de Début:</label>
+                    <input
+                      type="time"
+                      class="form-control"
+                      id="seanceStartTime"
+                      step="1"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="seanceEndTime">Heure de Fin:</label>
+                    <input
+                      type="time"
+                      class="form-control"
+                      id="seanceEndTime"
+                      step="1"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Teachers Section -->
+              <div class="form-group">
+                <label>Enseignants:</label>
+                <div class="input-group mb-2">
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="teacherInput"
+                    placeholder="Entrer le code enseignant (numéro)"
+                    min="1"
+                  />
+                  <div class="input-group-append">
+                    <button
+                      class="btn btn-outline-primary"
+                      type="button"
+                      onclick="addTeacher()"
+                    >
+                      <i class="fas fa-plus"></i> Ajouter
+                    </button>
+                  </div>
+                </div>
+                <div id="teachersContainer" class="mb-2">
+                  <!-- Teacher badges will appear here -->
+                </div>
+              </div>
+
+              <!-- Rooms Section -->
+              <div class="form-group">
+                <label>Salles:</label>
+                <div class="input-group mb-2">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="roomInput"
+                    placeholder="Entrer le code de la salle"
+                  />
+                  <div class="input-group-append">
+                    <button
+                      class="btn btn-outline-primary"
+                      type="button"
+                      onclick="addRoom()"
+                    >
+                      <i class="fas fa-plus"></i> Ajouter
+                    </button>
+                  </div>
+                </div>
+                <div id="roomsContainer" class="mb-2">
+                  <!-- Room badges will appear here -->
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="saveNewSeance()"
+            >
+              Enregistrer la Séance
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Seance Modal -->
+    <div
+      class="modal fade"
+      id="editSeanceModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="editSeanceModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editSeanceModalLabel">
+              Modifier la Séance
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="editSeanceForm">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="editSeanceStartTime">Heure de Début:</label>
+                    <input
+                      type="time"
+                      class="form-control"
+                      id="editSeanceStartTime"
+                      step="1"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="editSeanceEndTime">Heure de Fin:</label>
+                    <input
+                      type="time"
+                      class="form-control"
+                      id="editSeanceEndTime"
+                      step="1"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Teachers Section -->
+              <div class="form-group">
+                <label>Enseignants:</label>
+                <div class="input-group mb-2">
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="editTeacherInput"
+                    placeholder="Entrer le code enseignant (numéro)"
+                    min="1"
+                  />
+                  <div class="input-group-append">
+                    <button
+                      class="btn btn-outline-primary"
+                      type="button"
+                      onclick="addEditTeacher()"
+                    >
+                      <i class="fas fa-plus"></i> Ajouter
+                    </button>
+                  </div>
+                </div>
+                <div id="editTeachersContainer" class="mb-2">
+                  <!-- Teacher badges will appear here -->
+                </div>
+              </div>
+
+              <!-- Rooms Section -->
+              <div class="form-group">
+                <label>Salles:</label>
+                <div class="input-group mb-2">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="editRoomInput"
+                    placeholder="Entrer le code de la salle"
+                  />
+                  <div class="input-group-append">
+                    <button
+                      class="btn btn-outline-primary"
+                      type="button"
+                      onclick="addEditRoom()"
+                    >
+                      <i class="fas fa-plus"></i> Ajouter
+                    </button>
+                  </div>
+                </div>
+                <div id="editRoomsContainer" class="mb-2">
+                  <!-- Room badges will appear here -->
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="saveEditSeance()"
+            >
+              Mettre à Jour la Séance
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import CSV Modal -->
+    <div
+      class="modal fade"
+      id="importCsvModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="importCsvModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="importCsvModalLabel">
+              Importer des Séances depuis un CSV/XLSX
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-warning" role="alert">
+              <i class="fas fa-exclamation-triangle"></i>
+              <strong>Attention:</strong> Ceci remplacera toutes les données
+              actuelles des séances par les données du fichier CSV ou XLSX
+              sélectionné.
+            </div>
+            <div class="form-group">
+              <label for="csvFileInput"
+                >Sélectionner un Fichier CSV ou XLSX:</label
+              >
+              <input
+                type="file"
+                class="form-control-file"
+                id="csvFileInput"
+                accept=".csv,.xlsx"
+                required
+              />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="processCsvImport()"
+            >
+              Importer CSV
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div
+      class="modal fade"
+      id="messageModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="messageModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="messageModalLabel">Message</h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p id="messageModalBody"></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div
+      class="modal fade"
+      id="confirmationModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="confirmationModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="confirmationModalLabel">
+              Confirmation
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p id="confirmationModalBody"></p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+              id="confirmationCancel"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              id="confirmationConfirm"
+            >
+              Confirmer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <!-- Custom scripts for all pages-->
+    <script src="js/sb-admin-2.min.js"></script>
+
+    <!-- Page level plugins -->
+    <script src="vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="js/demo/datatables-demo.js"></script>
+
+    <!-- Eel JavaScript -->
+    <script type="text/javascript" src="/eel.js"></script>
+    <script src="seances.js"></script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+# Core Python libraries for seances.py
+# No external dependencies needed - uses only standard library modules:
+# - dataclasses (Python 3.7+)
+# - typing (Python 3.5+) 
+# - datetime (built-in)
+# - csv (built-in)
+
+# Web application dependencies
+eel>=0.16.0  # For desktop web app interface
+
+# Optimization solver for teacher assignment
+ortools>=9.0.0  # For CP-SAT solver in assignements.py
+
+# Optional dependencies for enhanced functionality
+pandas>=2.0.0  # For advanced CSV processing if needed
+pydantic>=2.0.0  # For data validation if needed
+openpyxl>=3.0.0  # For Excel file support in CSV/XLSX import functions
+
+weasyprint

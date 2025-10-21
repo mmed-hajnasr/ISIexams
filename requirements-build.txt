@@ -1,0 +1,22 @@
+# Build requirements for creating Windows executable
+pyinstaller>=5.13.0
+pyinstaller-hooks-contrib>=2023.6
+setuptools>=68.0.0
+
+# Required for cross-platform builds
+wheel>=0.40.0
+
+# Required for Wine-based Windows builds on Linux
+pefile>=2023.2.7
+
+# Core application dependencies (must be included in build)
+eel>=0.16.0
+ortools>=9.0.0
+pandas>=2.0.0
+pydantic>=2.0.0
+openpyxl>=3.0.0
+weasyprint>=59.0
+
+# Additional dependencies that might be needed
+pillow>=10.0.0
+cffi>=1.15.0

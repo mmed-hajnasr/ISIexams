@@ -1,0 +1,1199 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+
+    <title>Assignements - Gestion des Examens ISI</title>
+
+    <!-- Custom fonts for this template-->
+    <link
+      href="vendor/fontawesome-free/css/all.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+      rel="stylesheet"
+    />
+
+    <!-- Custom styles for this template-->
+    <link href="css/sb-admin-2.min.css" rel="stylesheet" />
+    
+    <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <!-- Custom styles for assignments page -->
+    <style>
+      .exam-calendar {
+        display: grid;
+        gap: 1rem;
+      }
+      
+      .exam-date {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+      }
+      
+      .exam-date h6 {
+        margin-bottom: 0.75rem;
+        color: #495057;
+        font-weight: 600;
+      }
+      
+      .session-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.5rem;
+      }
+      
+      .session-slot {
+        padding: 0.75rem;
+        border: 2px solid #dee2e6;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        text-align: center;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        background-color: white;
+        position: relative;
+      }
+      
+      .session-slot:hover {
+        border-color: #007bff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      }
+      
+      .session-slot.selected {
+        background-color: #007bff;
+        border-color: #0056b3;
+        color: white;
+      }
+      
+      .session-slot.complete {
+        background-color: #d4edda;
+        border-color: #28a745;
+        color: #155724;
+      }
+      
+      .session-slot.over-assigned {
+        background-color: #d1ecf1;
+        border-color: #17a2b8;
+        color: #0c5460;
+      }
+      
+      .session-slot.partial {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+        color: #856404;
+      }
+      
+      .session-slot.empty {
+        background-color: #f8d7da;
+        border-color: #dc3545;
+        color: #721c24;
+      }
+      
+      .session-slot.no-exam {
+        background-color: #e2e3e5;
+        border-color: #6c757d;
+        color: #495057;
+        cursor: not-allowed;
+      }
+      
+      .session-time {
+        font-weight: 600;
+        display: block;
+      }
+      
+      .session-name {
+        font-size: 0.75rem;
+        opacity: 0.8;
+      }
+      
+      .session-status {
+        font-size: 0.7rem;
+        margin-top: 0.25rem;
+        font-weight: 500;
+      }
+      
+      .assignment-progress {
+        position: absolute;
+        bottom: 2px;
+        left: 2px;
+        right: 2px;
+        height: 3px;
+        background-color: rgba(0,0,0,0.1);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      
+      .assignment-progress-bar {
+        height: 100%;
+        background-color: #28a745;
+        transition: width 0.3s;
+      }
+      
+      /* Teacher card styles for add teacher modal */
+      .teacher-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid #dee2e6;
+      }
+      
+      .teacher-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      }
+      
+      .teacher-info .card-title {
+        color: #495057;
+        font-size: 0.95rem;
+      }
+      
+      .badge-outline-secondary {
+        color: #6c757d;
+        border: 1px solid #6c757d;
+        background-color: transparent;
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+      }
+      
+      .teacher-list .progress {
+        background-color: #f8f9fa;
+      }
+      
+      .teacher-list .card-body {
+        position: relative;
+      }
+      
+      /* Styles for assigned teachers in modal */
+      .teacher-card.assigned {
+        border-color: #28a745;
+        background-color: #d4edda;
+      }
+      
+      .teacher-card.assigned .card-title {
+        color: #155724;
+      }
+      
+      .teacher-card.assigned .badge {
+        background-color: #28a745;
+        color: white;
+      }
+      
+      /* Styles for unavailable teachers */
+      .teacher-card.unavailable {
+        border-color: #ffc107;
+        background-color: #fff3cd;
+      }
+      
+      .teacher-card.unavailable .card-title {
+        color: #856404;
+      }
+      
+      /* Styles for conflict assignments (assigned but unavailable) */
+      /* Note: Assigned cards will always be green, conflicts shown via icon only */
+      .teacher-card.assigned.conflict {
+        border-color: #28a745;
+        background-color: #d4edda;
+        border-width: 2px;
+      }
+      
+      .teacher-card.assigned.conflict .card-title {
+        color: #155724;
+      }
+      
+      .teacher-card.conflict:not(.assigned) {
+        border-color: #ffc107;
+        background-color: #fff3cd;
+        border-width: 2px;
+      }
+      
+      .teacher-card.conflict:not(.assigned) .card-title {
+        color: #856404;
+      }
+      
+      /* Make modal wider for better teacher card display */
+      #addTeacherModal .modal-dialog {
+        max-width: 90%;
+      }
+      
+      /* Filter button styling */
+      .btn-group .btn.active {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+      }
+    </style>
+  </head>
+
+  <body id="page-top">
+    <!-- Page Wrapper -->
+    <div id="wrapper">
+      <!-- Sidebar -->
+      <ul
+        class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion"
+        id="accordionSidebar"
+      >
+        <!-- Sidebar - Brand -->
+        <a
+          class="sidebar-brand d-flex align-items-center justify-content-center"
+          href="seances.html"
+        >
+          <img src="img/isi-logo.png" style="width: 50px; height: 50px" />
+        </a>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider my-0" />
+
+        <!-- Nav Item - Dashboard -->
+        <li class="nav-item">
+          <a class="nav-link" href="seances.html">
+            <i class="fas fa-fw fa-calendar"></i>
+            <span>Seances</span></a
+          >
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="enseignants.html">
+            <i class="fas fa-fw fa-user"></i>
+            <span>Enseignants</span></a
+          >
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="configuration.html">
+            <i class="fas fa-fw fa-cog"></i>
+            <span>Paramètres</span>
+          </a>
+        </li>
+        
+        <hr class="sidebar-divider" />
+        <!-- Heading -->
+        <div class="sidebar-heading">Génération</div>
+
+        <li class="nav-item active">
+          <a class="nav-link" href="assignements.html">
+            <i class="fas fa-fw fa-users"></i>
+            <span>Assignements</span></a
+          >
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="emploi.html">
+            <i class="fas fa-fw fa-calendar-check"></i>
+            <span>Emplois du Temps</span></a
+          >
+        </li>
+
+        <!-- Nav Item - Pages Collapse Menu -->
+      </ul>
+      <!-- End of Sidebar -->
+      <div id="content-wrapper" class="d-flex flex-column">
+        <!-- Main Content -->
+        <div id="content">
+          <!-- Begin Page Content -->
+          <div class="container-fluid">
+            <!-- Page Heading -->
+            <div class="mb-3"></div>
+            <div class="d-sm-flex align-items-center justify-content-between mb-4">
+              <h1 class="h3 mb-0 text-gray-800">Assignements des Enseignants</h1>
+              <div>
+                <button id="autoAssignBtn" class="btn btn-success btn-sm mr-2" 
+                        title="Assignement automatique respectant les quotas de surveillance">
+                  <i class="fas fa-magic"></i> Auto-Attribution
+                </button>
+                <button id="clearAllBtn" class="btn btn-danger btn-sm mr-2"
+                        title="Supprimer tous les assignements">
+                  <i class="fas fa-trash"></i> Tout Effacer
+                </button>
+                <button id="printAllBtn" class="btn btn-primary btn-sm" 
+                        title="Générer et télécharger tous les rapports de surveillance dans un fichier ZIP">
+                  <i class="fas fa-file-archive"></i> Télécharger Tout (ZIP)
+                </button>
+              </div>
+            </div>
+
+            <!-- Exam Schedule Calendar -->
+            <div class="card shadow mb-4">
+              <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Calendrier des Examens</h6>
+              </div>
+              <div class="card-body">
+                <div id="examCalendar" class="exam-calendar">
+                  <!-- Calendar will be populated by JavaScript -->
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <!-- /.container-fluid -->
+        </div>
+        <!-- End of Main Content -->
+
+        <!-- Footer -->
+        <footer class="sticky-footer bg-white">
+          <div class="container my-auto">
+          </div>
+        </footer>
+        <!-- End of Footer -->
+      </div>
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <!-- Message Modal -->
+    <div class="modal fade" id="messageModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header" id="messageModalHeader">
+            <h5 class="modal-title" id="messageModalTitle">Message</h5>
+            <button type="button" class="close" data-dismiss="modal">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="messageModalBody">
+            <!-- Message content will be inserted here -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirmation</h5>
+            <button type="button" class="close" data-dismiss="modal">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="confirmModalBody">
+            <!-- Confirmation message will be inserted here -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-primary" id="confirmModalBtn">Confirmer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+        </div>
+        <!-- End of Main Content -->
+
+        <!-- Footer -->
+        <footer class="sticky-footer bg-white">
+          <div class="container my-auto">
+            <div class="copyright text-center my-auto">
+              <span>Copyright &copy; ISI Examens 2024</span>
+            </div>
+          </div>
+        </footer>
+        <!-- End of Footer -->
+      </div>
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+      <i class="fas fa-angle-up"></i>
+    </a>
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <!-- Custom scripts for all pages-->
+    <script src="js/sb-admin-2.min.js"></script>
+
+    <!-- Page level plugins -->
+    <script src="vendor/chart.js/Chart.min.js"></script>
+
+    <script src="vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="js/demo/datatables-demo.js"></script>
+
+    <!-- Eel JavaScript -->
+    <script type="text/javascript" src="/eel.js"></script>
+    
+    <script>
+      let currentSelectedSeance = null;
+      let examScheduleData = null;
+      let assignmentsOverview = null;
+
+      // Helper function to format time without seconds
+      function formatTimeWithoutSeconds(timeString) {
+        if (!timeString) return timeString;
+        // If time includes seconds (HH:MM:SS), remove them
+        if (timeString.includes(':') && timeString.split(':').length === 3) {
+          return timeString.substring(0, 5); // Keep only HH:MM
+        }
+        return timeString; // Return as-is if already in HH:MM format
+      }
+
+      $(document).ready(function() {
+        console.log('Assignments page loaded');
+        
+        // Initialize tooltips
+        $('[title]').tooltip();
+        
+        // Initialize assignments system and load data
+        initializeAssignments();
+        
+        // Event handlers
+        $('#autoAssignBtn').click(function() {
+          runAutoAssignment();
+        });
+        
+        $('#clearAllBtn').click(function() {
+          clearAllAssignments();
+        });
+        
+        $('#printAllBtn').click(function() {
+          printAllReports();
+        });
+      });
+
+      function initializeAssignments() {
+        console.log('Initializing assignments system...');
+        
+        // First, try to load the exam schedule
+        eel.get_exam_schedule_for_souhaits()(function(scheduleResult) {
+          if (scheduleResult.success) {
+            examScheduleData = scheduleResult;
+            console.log('Exam schedule loaded:', examScheduleData);
+          }
+          
+          // Then initialize assignments
+          eel.initialize_assignments()(function(result) {
+            if (result.success) {
+              console.log('Assignments system initialized');
+              loadAssignmentsData();
+            } else {
+              // Even if assignments fail, try to show the calendar
+              console.log('Assignments initialization failed, but showing calendar anyway');
+              if (examScheduleData) {
+                updateSeanceCalendar([]);  // Empty assignments
+              }
+              showErrorMessage('Erreur d\'initialisation', result.error);
+            }
+          });
+        });
+      }
+
+      function loadAssignmentsData() {
+        // Get assignments overview
+        eel.get_assignments_overview()(function(overviewResult) {
+          if (overviewResult.success) {
+            assignmentsOverview = overviewResult;
+            updateSeanceCalendar(overviewResult.seance_details);
+          } else {
+            console.log('Failed to get assignments overview:', overviewResult.error);
+            // Still try to show the calendar with empty assignments if we have schedule data
+            if (examScheduleData && examScheduleData.dates && examScheduleData.dates.length > 0) {
+              updateSeanceCalendar([]);  // Empty assignments
+            } else {
+              showErrorMessage('Erreur de chargement', overviewResult.error);
+            }
+          }
+        });
+      }
+
+      function updateSeanceCalendar(seanceDetails) {
+        const calendarContainer = $('#examCalendar');
+        calendarContainer.empty();
+        
+        console.log('Updating calendar with schedule data:', examScheduleData);
+        console.log('Seance details:', seanceDetails);
+        
+        if (!examScheduleData || !examScheduleData.dates || examScheduleData.dates.length === 0) {
+          calendarContainer.html('<div class="alert alert-info"><i class="fas fa-info-circle"></i> Aucune date d\'examen disponible. Veuillez d\'abord importer les données de séances.</div>');
+          return;
+        }
+        
+        calendarContainer.addClass('exam-calendar');
+        
+        // Group seance details by date
+        const seancesByDate = {};
+        seanceDetails.forEach(detail => {
+          const dateKey = examScheduleData.dates[detail.day - 1]; // Convert 1-based to 0-based
+          if (!seancesByDate[dateKey]) {
+            seancesByDate[dateKey] = [];
+          }
+          seancesByDate[dateKey].push(detail);
+        });
+        
+        examScheduleData.dates.forEach((date, dayIndex) => {
+          const dateDiv = $('<div class="exam-date"></div>');
+          
+          // Date header
+          const dateHeader = $(`<h6>${date}</h6>`);
+          dateDiv.append(dateHeader);
+          
+          // Sessions grid
+          const sessionsGrid = $('<div class="session-grid"></div>');
+          
+          const sessionsForDate = examScheduleData.sessions_by_date[date] || [];
+          const seancesForDate = seancesByDate[date] || [];
+          
+          if (sessionsForDate.length === 0) {
+            sessionsGrid.append('<div class="session-slot no-exam">Pas d\'examen</div>');
+          } else {
+            sessionsForDate.forEach((session, sessionIndex) => {
+              const seanceDetail = seancesForDate.find(s => s.seance === sessionIndex + 1);
+              const dayNumber = dayIndex + 1;
+              const seanceNumber = sessionIndex + 1;
+              
+              let statusClass = 'empty';
+              let statusText = 'Non assigné';
+              let progressWidth = 0;
+              let hasConflicts = false;
+              
+              if (seanceDetail) {
+                // Check for conflicts in this seance
+                hasConflicts = seanceDetail.has_conflicts || false;
+                
+                if (seanceDetail.assigned >= seanceDetail.required) {
+                  // Seance is satisfied (complete or surplus)
+                  if (seanceDetail.assigned > seanceDetail.required) {
+                    statusClass = 'over-assigned';
+                    statusText = `Surplus (${seanceDetail.assigned}/${seanceDetail.required})`;
+                  } else {
+                    statusClass = 'complete';
+                    statusText = 'Complet';
+                  }
+                  progressWidth = 100;
+                } else if (seanceDetail.assigned > 0) {
+                  statusClass = 'partial';
+                  statusText = `${seanceDetail.assigned}/${seanceDetail.required}`;
+                  progressWidth = (seanceDetail.assigned / seanceDetail.required) * 100;
+                } else {
+                  statusClass = 'empty';
+                  statusText = `0/${seanceDetail.required}`;
+                  progressWidth = 0;
+                }
+                
+                if (hasConflicts) {
+                  statusText += ' ⚠️';
+                }
+              }
+              
+              const slotElement = $(`
+                <div class="session-slot ${statusClass}" data-day="${dayNumber}" data-seance="${seanceNumber}">
+                  <span class="session-name">${session.name}</span>
+                  <span class="session-time">${formatTimeWithoutSeconds(session.h_debut)}-${formatTimeWithoutSeconds(session.h_fin)}</span>
+                  <div class="session-status">${statusText}</div>
+                  <div class="assignment-progress">
+                    <div class="assignment-progress-bar" style="width: ${progressWidth}%"></div>
+                  </div>
+                </div>
+              `);
+              
+              slotElement.click(function() {
+                selectSeance(dayNumber, seanceNumber);
+              });
+              
+              sessionsGrid.append(slotElement);
+            });
+          }
+          
+          dateDiv.append(sessionsGrid);
+          calendarContainer.append(dateDiv);
+        });
+      }
+
+      function selectSeance(day, seance) {
+        // Update visual selection
+        $('.session-slot').removeClass('selected');
+        $(`.session-slot[data-day="${day}"][data-seance="${seance}"]`).addClass('selected');
+        
+        currentSelectedSeance = { day: day, seance: seance };
+        
+        // Automatically show the teacher assignment modal
+        showTeacherAssignmentModal();
+      }
+
+      function showAddTeacherModal() {
+        showTeacherAssignmentModal();
+      }
+      
+      function showTeacherAssignmentModal() {
+        if (!currentSelectedSeance) {
+          showErrorMessage('Erreur', 'Veuillez sélectionner une séance d\'abord');
+          return;
+        }
+        
+        eel.get_all_teachers_for_seance(currentSelectedSeance.day, currentSelectedSeance.seance)(function(result) {
+          if (result.success) {
+            displayTeacherAssignmentModal(result.teachers, result.seance_info);
+          } else {
+            showErrorMessage('Erreur', result.error);
+          }
+        });
+      }
+
+      // Store current assignment state
+      let currentAssignments = [];
+      
+      function displayTeacherAssignmentModal(teachers, seanceInfo) {
+        // Initialize current assignments from server data
+        currentAssignments = teachers.filter(t => t.is_assigned).map(t => t.id);
+        
+        let modalContent = `
+          <div class="modal fade" id="addTeacherModal" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+              <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                  <h5 class="modal-title">
+                    <i class="fas fa-users mr-2"></i>
+                    Gérer les Assignements - Jour ${seanceInfo.day}, Séance ${seanceInfo.seance}
+                  </h5>
+                  <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                  </button>
+                </div>
+                
+                <!-- Confirm Button at Top -->
+                <div class="bg-light border-bottom p-3">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span class="text-info">
+                        <i class="fas fa-info-circle"></i>
+                        Requis: <strong>${seanceInfo.required}</strong> | 
+                        Actuellement: <strong id="currentAssignedCount">${seanceInfo.currently_assigned}</strong>
+                      </span>
+                    </div>
+                    <div class="btn-group" role="group">
+                      <button type="button" class="btn btn-info" onclick="printSelectedSeanceReport()" id="modalPrintBtn">
+                        <i class="fas fa-print mr-2"></i>Imprimer Rapport
+                      </button>
+                      <button type="button" class="btn btn-success" onclick="saveAssignments()" id="saveAssignmentsBtn">
+                        <i class="fas fa-save mr-2"></i>Confirmer les Assignements
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="modal-body">
+        `;
+        
+        if (teachers.length === 0) {
+          modalContent += `
+            <div class="text-center py-4">
+              <i class="fas fa-exclamation-circle text-warning fa-3x mb-3"></i>
+              <p class="text-muted h5">Aucun enseignant disponible.</p>
+              <small class="text-muted">Aucun enseignant ne participe à la surveillance.</small>
+            </div>
+          `;
+        } else {
+          // Calculate available teachers count
+          const availableTeachersCount = teachers.filter(teacher => teacher.can_be_assigned || teacher.is_assigned).length;
+          
+          modalContent += `
+            <!-- Search and Filter Controls -->
+            <div class="mb-3">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                      </span>
+                    </div>
+                    <input type="text" class="form-control" id="teacherSearch" placeholder="Rechercher un enseignant..." onkeyup="filterTeachers()">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="btn-group btn-group-sm w-100" role="group">
+                    <button type="button" class="btn btn-outline-secondary active" id="filterAll" onclick="setFilter('all')">
+                      <i class="fas fa-users mr-1"></i>Tous (${teachers.length})
+                    </button>
+                    <button type="button" class="btn btn-outline-success" id="filterAssigned" onclick="setFilter('assigned')">
+                      <i class="fas fa-check mr-1"></i>Assignés (<span id="assignedCount">${seanceInfo.currently_assigned}</span>)
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" id="filterUnassigned" onclick="setFilter('unassigned')">
+                      <i class="fas fa-user-plus mr-1"></i>Non assignés (<span id="unassignedCount">${teachers.length - seanceInfo.currently_assigned}</span>)
+                    </button>
+                    <button type="button" class="btn btn-outline-info" id="filterAvailable" onclick="setFilter('available')">
+                      <i class="fas fa-user-check mr-1"></i>Disponibles (<span id="availableCount">${availableTeachersCount}</span>)
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-12">
+                  <small class="text-muted">
+                    <i class="fas fa-info-circle"></i>
+                    Cliquez sur un enseignant pour basculer son assignement (vert = assigné) | 
+                    Format: Heures actuelles / Quota max
+                  </small>
+                </div>
+              </div>
+            </div>
+            <div class="teacher-list">
+              <div class="row" id="teacherCards">
+          `;
+          
+          teachers.forEach(function(teacher) {
+            const quotaPercentage = teacher.quota > 0 ? Math.round((teacher.current_surveillances / teacher.quota) * 100) : 0;
+            let progressBarClass = 'bg-success';
+            if (quotaPercentage >= 80) progressBarClass = 'bg-warning';
+            if (quotaPercentage >= 100) progressBarClass = 'bg-danger';
+            
+            const isAssigned = teacher.is_assigned;
+            const isUnavailable = !teacher.is_available;
+            let cardClass = 'teacher-card';
+            
+            if (isAssigned && isUnavailable) {
+              cardClass = 'teacher-card assigned conflict';
+            } else if (isAssigned) {
+              cardClass = 'teacher-card assigned';
+            } else if (isUnavailable) {
+              cardClass = 'teacher-card unavailable';
+            }
+            
+            const canAssign = teacher.can_be_assigned || isAssigned || isUnavailable; // Allow unavailable to be clicked
+            const disabled = !canAssign ? 'disabled' : '';
+            
+            let statusIcon = '';
+            if (isUnavailable && isAssigned) {
+              statusIcon = '<i class="fas fa-exclamation-triangle text-warning" title="CONFLIT - Assigné mais non disponible"></i>';
+            } else if (isUnavailable) {
+              statusIcon = '<i class="fas fa-times-circle text-warning" title="Non disponible - Cliquer pour forcer l\'assignement"></i>';
+            } else if (!teacher.has_quota_remaining && !isAssigned) {
+              statusIcon = '<i class="fas fa-exclamation-triangle text-warning" title="Quota atteint"></i>';
+            } else if (isAssigned) {
+              statusIcon = '<i class="fas fa-check-circle text-success" title="Assigné"></i>';
+            }
+            
+            modalContent += `
+              <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 ${cardClass}" data-teacher-id="${teacher.id}" onclick="toggleTeacherAssignment(${teacher.id})" style="${!canAssign ? 'opacity: 0.6; cursor: not-allowed;' : 'cursor: pointer;'}">
+                  <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div class="teacher-info">
+                        <h6 class="card-title mb-1">${teacher.name} ${statusIcon}</h6>
+                        <small class="text-muted">${teacher.code || 'Pas de code'}</small>
+                      </div>
+                      <span class="badge ${isAssigned ? 'badge-success' : 'badge-outline-secondary'}">${teacher.grade}</span>
+                    </div>
+                    
+                    <div class="mb-2">
+                      <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted">Charge de travail</small>
+                        <small class="font-weight-bold">${teacher.current_surveillances}/${teacher.quota}</small>
+                      </div>
+                      <div class="progress" style="height: 6px;">
+                        <div class="progress-bar ${progressBarClass}" style="width: ${Math.min(quotaPercentage, 100)}%"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+          
+          modalContent += '</div></div>';
+        }
+        
+        modalContent += `
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Remove existing modal and add new one
+        $('#addTeacherModal').remove();
+        $('body').append(modalContent);
+        $('#addTeacherModal').modal('show');
+      }
+
+      function toggleTeacherAssignment(teacherId) {
+        const card = $(`.teacher-card[data-teacher-id="${teacherId}"]`);
+        
+        // Check if teacher can be toggled (quota exceeded teachers cannot be toggled)
+        if (card.css('opacity') == '0.6' && !card.hasClass('unavailable') && !card.hasClass('assigned')) {
+          return; // Teacher is disabled due to quota
+        }
+        
+        const isCurrentlyAssigned = currentAssignments.includes(teacherId);
+        const isUnavailable = card.hasClass('unavailable') || card.hasClass('conflict');
+        
+        if (isCurrentlyAssigned) {
+          // Remove from assignments
+          currentAssignments = currentAssignments.filter(id => id !== teacherId);
+          card.removeClass('assigned conflict');
+          if (isUnavailable) {
+            card.addClass('unavailable');
+          }
+          card.find('.badge').removeClass('badge-success').addClass('badge-outline-secondary');
+        } else {
+          // Handle assignment - no confirmation needed
+          // Add to assignments
+          currentAssignments.push(teacherId);
+          card.addClass('assigned');
+          if (isUnavailable) {
+            card.addClass('conflict');
+          }
+          card.removeClass('unavailable');
+          card.find('.badge').removeClass('badge-outline-secondary').addClass('badge-success');
+        }
+        
+        // Update counters and maintain current filter
+        updateFilterCounts();
+        filterTeachers(); // Re-apply current filter instead of resetting to 'all'
+      }
+      
+      function saveAssignments() {
+        if (!currentSelectedSeance) {
+          showErrorMessage('Erreur', 'Aucune séance sélectionnée');
+          return;
+        }
+        
+        // Check if there are any conflicts (assigned teachers that are unavailable)
+        const hasConflicts = $('.teacher-card.assigned.conflict').length > 0;
+        
+        const btn = $('#saveAssignmentsBtn');
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Sauvegarde...');
+        
+        eel.update_seance_assignments(currentSelectedSeance.day, currentSelectedSeance.seance, currentAssignments, hasConflicts)(function(result) {
+          btn.prop('disabled', false).html('<i class="fas fa-save mr-2"></i>Confirmer les Assignements');
+          
+          if (result.success) {
+            let message = result.message;
+            if (result.conflicts && result.conflicts.length > 0) {
+              message += '\n\nConflits détectés:\n';
+              result.conflicts.forEach(conflict => {
+                message += `- ${conflict.teacher_name}: ${conflict.message}\n`;
+              });
+            }
+            showSuccessMessage('Succès', message);
+            $('#addTeacherModal').modal('hide');
+            // Refresh the data
+            loadAssignmentsData(); // Refresh overview
+          } else {
+            showErrorMessage('Erreur', result.error);
+          }
+        });
+      }
+      
+      function assignTeacher(teacherId) {
+        // Legacy function - now redirects to toggle
+        toggleTeacherAssignment(teacherId);
+      }
+      
+      // Filter and search functionality
+      let currentFilter = 'all';
+      
+      function setFilter(filterType) {
+        currentFilter = filterType;
+        
+        // Update button states
+        $('#filterAll, #filterAssigned, #filterUnassigned, #filterAvailable').removeClass('active');
+        $(`#filter${filterType.charAt(0).toUpperCase() + filterType.slice(1)}`).addClass('active');
+        
+        // Apply filters
+        filterTeachers();
+      }
+      
+      function filterTeachers() {
+        const searchTerm = $('#teacherSearch').val().toLowerCase();
+        
+        $('#teacherCards .col-md-6').each(function() {
+          const card = $(this);
+          const teacherCard = card.find('.teacher-card');
+          const teacherId = parseInt(teacherCard.data('teacher-id'));
+          const teacherName = card.find('.card-title').text().toLowerCase();
+          const isAssigned = currentAssignments.includes(teacherId);
+          const isAvailable = teacherCard.css('opacity') != '0.6'; // Available if not disabled (opacity not 0.6)
+          
+          let showCard = true;
+          
+          // Apply filter
+          if (currentFilter === 'assigned' && !isAssigned) {
+            showCard = false;
+          } else if (currentFilter === 'unassigned' && isAssigned) {
+            showCard = false;
+          } else if (currentFilter === 'available' && !isAvailable) {
+            showCard = false;
+          }
+          
+          // Apply search
+          if (searchTerm && !teacherName.includes(searchTerm)) {
+            showCard = false;
+          }
+          
+          if (showCard) {
+            card.show();
+          } else {
+            card.hide();
+          }
+        });
+      }
+      
+      function updateFilterCounts() {
+        const assignedCount = currentAssignments.length;
+        const totalCount = $('#teacherCards .col-md-6').length;
+        const unassignedCount = totalCount - assignedCount;
+        
+        // Count available teachers (not disabled/opaque)
+        let availableCount = 0;
+        $('#teacherCards .col-md-6').each(function() {
+          const teacherCard = $(this).find('.teacher-card');
+          const isAvailable = teacherCard.css('opacity') != '0.6';
+          if (isAvailable) {
+            availableCount++;
+          }
+        });
+        
+        $('#assignedCount').text(assignedCount);
+        $('#unassignedCount').text(unassignedCount);
+        $('#availableCount').text(availableCount);
+        $('#currentAssignedCount').text(assignedCount);
+      }
+
+      function removeTeacher(teacherId) {
+        if (!currentSelectedSeance) {
+          showErrorMessage('Erreur', 'Aucune séance sélectionnée');
+          return;
+        }
+        
+        showConfirmModal('Êtes-vous sûr de vouloir retirer cet enseignant de cette séance ?', function() {
+          eel.remove_teacher_from_seance_manual(currentSelectedSeance.day, currentSelectedSeance.seance, teacherId)(function(result) {
+            if (result.success) {
+              showSuccessMessage('Succès', result.message);
+              // Refresh the data
+              loadAssignmentsData(); // Refresh overview
+            } else {
+              showErrorMessage('Erreur', result.error);
+            }
+          });
+        });
+      }
+
+      function runAutoAssignment() {
+        showConfirmModal('Êtes-vous sûr de vouloir lancer l\'assignement automatique ? Cela peut modifier les assignements existants.', function() {
+          const btn = $('#autoAssignBtn');
+          btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+          
+          eel.auto_assign_teachers()(function(result) {
+            btn.prop('disabled', false).html('<i class="fas fa-magic"></i> Auto-Assign');
+            
+            // Always show assignment results
+            displayAssignmentResults(result);
+            
+            // Always refresh data to show current state
+            loadAssignmentsData();
+          });
+        });
+      }
+
+      function clearAllAssignments() {
+        showConfirmModal('Êtes-vous sûr de vouloir supprimer TOUS les assignements ? Cette action est irréversible !', function() {
+          eel.clear_all_assignments()(function(result) {
+            if (result.success) {
+              showSuccessMessage('Succès', result.message);
+              
+              // Refresh all data
+              loadAssignmentsData();
+            } else {
+              showErrorMessage('Erreur', result.error);
+            }
+          });
+        });
+      }
+
+      function displayAssignmentResults(result) {
+        if (result.success) {
+          if (result.status === 'complete_success') {
+            // All seances were satisfied
+            showSuccessMessage('Succès', result.message);
+          } else if (result.status === 'partial_success') {
+            // Some seances were satisfied but not all
+            showSuccessMessage('Assignement Partiel', result.message);
+          }
+        } else {
+          // Complete failure
+          showErrorMessage('Erreur', result.error);
+        }
+      }
+
+      function showSuccessMessage(title, message) {
+        showMessageModal(title, message, 'success');
+      }
+
+      function showErrorMessage(title, message) {
+        showMessageModal(title, message, 'danger');
+      }
+
+      function showMessageModal(title, message, type) {
+        // Set modal colors based on type
+        const modalHeader = $('#messageModalHeader');
+        const modalTitle = $('#messageModalTitle');
+        const modalBody = $('#messageModalBody');
+        
+        // Reset classes
+        modalHeader.removeClass('bg-success bg-danger bg-warning bg-info text-white');
+        
+        // Set appropriate styling
+        switch(type) {
+          case 'success':
+            modalHeader.addClass('bg-success text-white');
+            break;
+          case 'danger':
+            modalHeader.addClass('bg-danger text-white');
+            break;
+          case 'warning':
+            modalHeader.addClass('bg-warning text-white');
+            break;
+          default:
+            modalHeader.addClass('bg-info text-white');
+        }
+        
+        modalTitle.text(title);
+        modalBody.html(message);
+        $('#messageModal').modal('show');
+      }
+
+      function showConfirmModal(message, onConfirm) {
+        $('#confirmModalBody').text(message);
+        $('#confirmModal').modal('show');
+        
+        // Remove previous event handlers and add new one
+        $('#confirmModalBtn').off('click').on('click', function() {
+          $('#confirmModal').modal('hide');
+          if (onConfirm) {
+            onConfirm();
+          }
+        });
+      }
+
+      function printSelectedSeanceReport() {
+        console.log('Print button clicked, currentSelectedSeance:', currentSelectedSeance);
+        
+        if (!currentSelectedSeance) {
+          showErrorMessage('Erreur', 'Aucune séance sélectionnée. Veuillez sélectionner une séance d\'abord.');
+          return;
+        }
+        
+        if (!currentSelectedSeance.day || !currentSelectedSeance.seance) {
+          showErrorMessage('Erreur', 'Informations de séance invalides.');
+          return;
+        }
+        
+        // Create a temporary link to trigger download dialog
+        const fileName = `surveillance_J${currentSelectedSeance.day}_S${currentSelectedSeance.seance}.pdf`;
+        
+        generateSingleReport(currentSelectedSeance.day, currentSelectedSeance.seance, fileName);
+      }
+      
+      function printAllReports() {
+        // Generate all reports with default naming
+        const baseName = 'rapports_surveillance';
+        generateAllReports(baseName);
+      }
+      
+      function generateSingleReport(day, seance, fileName) {
+        console.log('Generating report for day:', day, 'seance:', seance, 'fileName:', fileName);
+        
+        const btn = $('#modalPrintBtn');
+        if (btn.length === 0) {
+          console.error('Modal print button not found');
+          showErrorMessage('Erreur', 'Bouton d\'impression non trouvé');
+          return;
+        }
+        
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Génération...');
+        
+        eel.generate_surveillance_report_for_seance(day, seance, fileName)(function(result) {
+          console.log('Backend response received:', result);
+          console.log('Result type:', typeof result);
+          console.log('Result keys:', result ? Object.keys(result) : 'null/undefined');
+          
+          btn.prop('disabled', false).html('<i class="fas fa-print mr-2"></i>Imprimer Rapport');
+          
+          // Handle the result - check for both 'success' field and 'status' field
+          if (result && (result.success === true || result.status === 'success')) {
+            // Create download link for the generated PDF
+            const outputPath = result.output_path || `/generated_reports/${fileName}`;
+            downloadPDF(outputPath, fileName);
+          } else if (result && result.success === false) {
+            const errorMsg = result.error || 'Erreur inconnue lors de la génération du rapport';
+            console.error('Generation failed:', errorMsg);
+            showErrorMessage('Erreur', `Erreur lors de la génération du rapport:<br>${errorMsg}`);
+          } else {
+            // Handle undefined or unexpected result format
+            console.error('Unexpected result format:', result);
+            if (result && result.status === 'success') {
+              // Backend uses 'status' field instead of 'success'
+              const outputPath = result.output_path || `/generated_reports/${fileName}`;
+              downloadPDF(outputPath, fileName);
+            } else {
+              showErrorMessage('Erreur', `Format de réponse inattendu du serveur. Consultez la console pour plus de détails.`);
+            }
+          }
+        }).catch(function(error) {
+          console.error('Eel call failed:', error);
+          btn.prop('disabled', false).html('<i class="fas fa-print mr-2"></i>Imprimer Rapport');
+          showErrorMessage('Erreur', `Erreur de communication avec le serveur:<br>${error}`);
+        });
+      }
+      
+      function generateAllReports(baseName) {
+        const btn = $('#printAllBtn');
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Génération...');
+        
+        eel.generate_all_surveillance_reports(baseName)(function(result) {
+          btn.prop('disabled', false).html('<i class="fas fa-file-archive"></i> Télécharger Tout (ZIP)');
+          
+          if (result.success) {
+            let message = `<strong>${result.generated_count}</strong> rapports générés avec succès et packagés dans un fichier ZIP.<br><br>`;
+            
+            if (result.zip_download) {
+              message += `<strong>Télécharger le fichier ZIP:</strong><br>`;
+              message += `<a href="${result.zip_download.url}" download="${result.zip_download.filename}" class="btn btn-primary btn-sm mt-2">`;
+              message += `<i class="fas fa-download mr-2"></i>Télécharger ${result.zip_download.filename}</a>`;
+              
+              // Auto-download the ZIP file
+              downloadPDF(result.zip_download.url, result.zip_download.filename);
+              
+              message += `<br><br><small class="text-muted">Le téléchargement devrait commencer automatiquement. Si ce n'est pas le cas, cliquez sur le bouton ci-dessus.</small>`;
+            }
+            
+            showSuccessMessage('Succès', message);
+          } else {
+            showErrorMessage('Erreur', `Erreur lors de la génération des rapports:<br>${result.error}`);
+          }
+        });
+      }
+      
+      function downloadPDF(filePath, fileName) {
+        // Create a temporary link to trigger download
+        const link = document.createElement('a');
+        link.href = filePath.replace(/\\/g, '/'); // Normalize path separators
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    </script>
+  </body>
+</html>
