@@ -36,9 +36,13 @@ jobs:
         Invoke-WebRequest -Uri "https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases/download/2022-01-04/gtk3-runtime-3.24.31-2022-01-04-ts-win64.exe" -OutFile "gtk-installer.exe"
         Start-Process -FilePath "gtk-installer.exe" -ArgumentList "/S" -Wait
         
-        # Verify GTK installation
+        # Verify GTK installation and gobject libraries
         if (Test-Path "C:\Program Files\GTK3-Runtime Win64\bin") {
           Write-Host "GTK3 runtime installed successfully"
+          # List gobject-related DLLs to verify they're available
+          Get-ChildItem "C:\Program Files\GTK3-Runtime Win64\bin\*gobject*.dll" -ErrorAction SilentlyContinue
+          Get-ChildItem "C:\Program Files\GTK3-Runtime Win64\bin\*glib*.dll" -ErrorAction SilentlyContinue
+          Get-ChildItem "C:\Program Files\GTK3-Runtime Win64\bin\*gio*.dll" -ErrorAction SilentlyContinue
         } else {
           Write-Host "Warning: GTK3 runtime not found at expected location"
         }
@@ -74,12 +78,20 @@ jobs:
     - name: Test imports
       shell: powershell
       run: |
+        # Set GTK environment for testing
+        $env:PATH = "C:\Program Files\GTK3-Runtime Win64\bin;$env:PATH"
+        $env:GI_TYPELIB_PATH = "C:\Program Files\GTK3-Runtime Win64\lib\girepository-1.0"
+        
         python -c "import eel; print('Eel imported successfully')"
         python -c "import weasyprint; print('Weasyprint imported successfully')"
         python -c "import pandas; print('Pandas imported successfully')"
         python -c "import openpyxl; print('OpenPyXL imported successfully')"
         python -c "import ortools; print('OR-Tools imported successfully')"
         python -c "from seances import Seances; print('Local modules imported successfully')"
+        
+        # Test gobject-related imports that WeasyPrint uses
+        python -c "import gi; print('GObject Introspection imported successfully')"
+        python -c "import gi; gi.require_version('Pango', '1.0'); from gi.repository import Pango; print('Pango imported successfully')"
 
     - name: Build with PyInstaller
       shell: cmd
@@ -104,12 +116,45 @@ jobs:
           exit /b 1
         )
         
-        # Build with PyInstaller (simpler approach - include GTK runtime separately)
+        # Verify GTK library paths exist before building
+        if (Test-Path "C:\Program Files\GTK3-Runtime Win64\bin\libgobject-2.0-0.dll") {
+          Write-Host "✓ libgobject-2.0-0.dll found"
+        } else {
+          Write-Host "✗ libgobject-2.0-0.dll NOT found - WeasyPrint may not work!"
+        }
+        
+        if (Test-Path "C:\Program Files\GTK3-Runtime Win64\lib\girepository-1.0") {
+          Write-Host "✓ GObject Introspection typelibs found"
+        } else {
+          Write-Host "✗ GObject Introspection typelibs NOT found!"
+        }
+        
+        # Build with PyInstaller (include GTK/GObject binaries and libraries)
         pyinstaller --noconfirm --onefile --windowed ^
           --add-data "web;web" ^
           --add-data "static;static" ^
           --add-data "pdf_generation;pdf_generation" ^
           --add-data "data;data" ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libgobject-2.0-0.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libglib-2.0-0.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libgio-2.0-0.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libgmodule-2.0-0.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libgthread-2.0-0.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libpango-1.0-0.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libpangocairo-1.0-0.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libpangowin32-1.0-0.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libcairo-2.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libcairo-gobject-2.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libfontconfig-1.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libfreetype-6.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libffi-6.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libintl-8.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libiconv-2.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libharfbuzz-0.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libpixman-1-0.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\libpng16-16.dll;." ^
+          --add-binary "C:\Program Files\GTK3-Runtime Win64\bin\zlib1.dll;." ^
+          --add-data "C:\Program Files\GTK3-Runtime Win64\lib\girepository-1.0;lib\girepository-1.0" ^
           --hidden-import "eel" ^
           --hidden-import "seances" ^
           --hidden-import "enseignants" ^
@@ -127,9 +172,17 @@ jobs:
           --hidden-import "openpyxl" ^
           --hidden-import "pandas" ^
           --hidden-import "pydantic" ^
+          --hidden-import "gi" ^
+          --hidden-import "gi.repository" ^
+          --hidden-import "gi.repository.GObject" ^
+          --hidden-import "gi.repository.Pango" ^
+          --hidden-import "gi.repository.PangoCairo" ^
+          --hidden-import "gi.repository.GLib" ^
+          --hidden-import "gi.repository.Gio" ^
           --collect-all "weasyprint" ^
           --collect-all "eel" ^
           --collect-all "ortools" ^
+          --collect-all "gi" ^
           --name "ISIexams-${{ matrix.architecture }}" ^
           --clean app.py
 
@@ -181,8 +234,11 @@ jobs:
         Write-Output "set PATH=%GTK_PATH%\bin;%PATH%" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
         Write-Output "set GI_TYPELIB_PATH=%GTK_PATH%\lib\girepository-1.0" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
         Write-Output "set GDK_PIXBUF_MODULE_FILE=%GTK_PATH%\lib\gdk-pixbuf-2.0\2.10.0\loaders.cache" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
+        Write-Output "set GOBJECT_INTROSPECTION_LIBDIR=%GTK_PATH%\lib" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
+        Write-Output "set XDG_DATA_DIRS=%GTK_PATH%\share;%XDG_DATA_DIRS%" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
         Write-Output "echo Starting ISIexams..." | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
         Write-Output "echo GTK Runtime: %GTK_PATH%" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
+        Write-Output "echo GObject libraries included in executable" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
         Write-Output "`"%~dp0ISIexams-${{ matrix.architecture }}.exe`"" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
         
         # Create README with instructions
@@ -194,10 +250,15 @@ jobs:
         Write-Output "   OR double-click ISIexams-${{ matrix.architecture }}.exe directly" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "## Contents:" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
-        Write-Output "- ISIexams-${{ matrix.architecture }}.exe: Main application" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- ISIexams-${{ matrix.architecture }}.exe: Main application (includes GObject libraries)" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "- ISIexams.bat: Startup script with GTK environment" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "- web/: Web interface files" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "- static/: Application assets" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- gtk3-runtime/: GTK libraries for PDF generation" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "## Technical Notes:" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- GObject libraries (libgobject-2.0-0.dll, libglib-2.0-0.dll, etc.) are embedded in the executable" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- WeasyPrint PDF generation should work without additional dependencies" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "- gtk3-runtime/: GTK libraries for PDF generation" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         
         # Create zip file
