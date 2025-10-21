@@ -5,6 +5,9 @@ on:
     tags:
       - "[v]?[0-9]+.[0-9]+.[0-9]+"
 
+permissions:
+  contents: write  # Required for creating releases and uploading assets
+
 jobs:
   build:
     name: Build Windows Executables
@@ -13,7 +16,6 @@ jobs:
       matrix:
         python-version: ['3.10']
         architecture: ['x64']  # Focus on x64 only for better OR-Tools compatibility
-        build-type: ['windowed', 'console']
 
     steps:
     - uses: actions/checkout@v4
@@ -27,8 +29,19 @@ jobs:
     - name: Install system dependencies
       shell: powershell
       run: |
-        # Install GTK3 runtime for weasyprint
+        # Install GTK3 runtime for WeasyPrint
         choco install -y gtk-runtime
+        
+        # Download and extract GTK3 runtime for distribution
+        Invoke-WebRequest -Uri "https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases/download/2022-01-04/gtk3-runtime-3.24.31-2022-01-04-ts-win64.exe" -OutFile "gtk-installer.exe"
+        Start-Process -FilePath "gtk-installer.exe" -ArgumentList "/S" -Wait
+        
+        # Verify GTK installation
+        if (Test-Path "C:\Program Files\GTK3-Runtime Win64\bin") {
+          Write-Host "GTK3 runtime installed successfully"
+        } else {
+          Write-Host "Warning: GTK3 runtime not found at expected location"
+        }
 
     - name: Install Python dependencies
       shell: powershell
@@ -91,8 +104,8 @@ jobs:
           exit /b 1
         )
         
-        # Build with PyInstaller
-        pyinstaller --noconfirm --onefile ${{ matrix.build-type == 'windowed' && '--windowed' || '--console' }} ^
+        # Build with PyInstaller (simpler approach - include GTK runtime separately)
+        pyinstaller --noconfirm --onefile --windowed ^
           --add-data "web;web" ^
           --add-data "static;static" ^
           --add-data "pdf_generation;pdf_generation" ^
@@ -117,16 +130,16 @@ jobs:
           --collect-all "weasyprint" ^
           --collect-all "eel" ^
           --collect-all "ortools" ^
-          --name "ISIexams-${{ matrix.architecture }}-${{ matrix.build-type }}" ^
+          --name "ISIexams-${{ matrix.architecture }}" ^
           --clean app.py
 
     - name: Verify build output
       shell: powershell
       run: |
         Write-Host "Build completed. Checking output:"
-        if (Test-Path "dist\ISIexams-${{ matrix.architecture }}-${{ matrix.build-type }}.exe") {
+        if (Test-Path "dist\ISIexams-${{ matrix.architecture }}.exe") {
           Write-Host "SUCCESS: Executable created successfully with full OR-Tools support"
-          Get-ChildItem "dist\ISIexams-${{ matrix.architecture }}-${{ matrix.build-type }}.exe"
+          Get-ChildItem "dist\ISIexams-${{ matrix.architecture }}.exe"
         } else {
           Write-Host "ERROR: Executable not found!"
           Write-Host "Contents of dist directory:"
@@ -134,17 +147,85 @@ jobs:
           exit 1
         }
 
+    - name: Create release package
+      shell: powershell
+      run: |
+        # Create release directory
+        New-Item -ItemType Directory -Force -Path "release"
+        
+        # Copy executable to release directory
+        Copy-Item "dist\ISIexams-${{ matrix.architecture }}.exe" "release\"
+        
+        # Copy web directory
+        Copy-Item "web" "release\" -Recurse
+        
+        # Copy static directory
+        Copy-Item "static" "release\" -Recurse
+        
+        # Copy GTK3 runtime for WeasyPrint support
+        if (Test-Path "C:\Program Files\GTK3-Runtime Win64") {
+          Write-Host "Including GTK3 runtime for WeasyPrint support..."
+          New-Item -ItemType Directory -Force -Path "release\gtk3-runtime"
+          Copy-Item "C:\Program Files\GTK3-Runtime Win64\*" "release\gtk3-runtime\" -Recurse -ErrorAction SilentlyContinue
+        } elseif (Test-Path "C:\GTK") {
+          Write-Host "Including GTK runtime from C:\GTK..."
+          New-Item -ItemType Directory -Force -Path "release\gtk3-runtime"
+          Copy-Item "C:\GTK\*" "release\gtk3-runtime\" -Recurse -ErrorAction SilentlyContinue
+        } else {
+          Write-Host "Warning: GTK runtime not found - PDF generation may not work"
+        }
+        
+        # Create a startup script that sets up GTK environment
+        Write-Output "@echo off" | Out-File -FilePath "release\ISIexams.bat" -Encoding ascii
+        Write-Output "set GTK_PATH=%~dp0gtk3-runtime" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
+        Write-Output "set PATH=%GTK_PATH%\bin;%PATH%" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
+        Write-Output "set GI_TYPELIB_PATH=%GTK_PATH%\lib\girepository-1.0" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
+        Write-Output "set GDK_PIXBUF_MODULE_FILE=%GTK_PATH%\lib\gdk-pixbuf-2.0\2.10.0\loaders.cache" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
+        Write-Output "echo Starting ISIexams..." | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
+        Write-Output "echo GTK Runtime: %GTK_PATH%" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
+        Write-Output "`"%~dp0ISIexams-${{ matrix.architecture }}.exe`"" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
+        
+        # Create README with instructions
+        Write-Output "# ISIexams Application" | Out-File -FilePath "release\README.txt" -Encoding utf8
+        Write-Output "" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "## How to run:" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "1. Extract this zip file to a folder" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "2. Run ISIexams.bat (recommended - sets up GTK for PDF generation)" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "   OR double-click ISIexams-${{ matrix.architecture }}.exe directly" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "## Contents:" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- ISIexams-${{ matrix.architecture }}.exe: Main application" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- ISIexams.bat: Startup script with GTK environment" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- web/: Web interface files" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- static/: Application assets" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- gtk3-runtime/: GTK libraries for PDF generation" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        
+        # Create zip file
+        Compress-Archive -Path "release\*" -DestinationPath "ISIexams-${{ matrix.architecture }}.zip"
+        
+        Write-Host "Release package created: ISIexams-${{ matrix.architecture }}.zip"
+        Get-ChildItem "ISIexams-${{ matrix.architecture }}.zip"
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ISIexams-Windows-${{ matrix.architecture }}-${{ matrix.build-type }}
-        path: dist/ISIexams-${{ matrix.architecture }}-${{ matrix.build-type }}.exe
+        name: ISIexams-Windows-${{ matrix.architecture }}
+        path: ISIexams-${{ matrix.architecture }}.zip
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: dist/ISIexams-${{ matrix.architecture }}-${{ matrix.build-type }}.exe
+        files: ISIexams-${{ matrix.architecture }}.zip
         generate_release_notes: true
+        body: |
+          ## ISIexams Release
+          
+          This release contains:
+          - **ISIexams-${{ matrix.architecture }}.exe** - The main application executable
+          - **web/** - Web interface files
+          - **static/** - Static assets (images, etc.)
+          
+          Simply extract the zip file and run the executable to start the application.
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
