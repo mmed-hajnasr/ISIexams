@@ -115,58 +115,79 @@ jobs:
         
         if ($gtkPath) {
           Write-Host "Using GTK libraries from: $gtkPath"
+          Write-Host "Available DLLs in GTK directory:"
+          Get-ChildItem "$gtkPath\*.dll" | ForEach-Object { Write-Host "  $($_.Name)" }
+          
           # Add GTK bin to PATH for PyInstaller to find libraries
           $env:PATH = "$gtkPath;$env:PATH"
           
-          pyinstaller --noconfirm --onefile --windowed `
-            --add-data "web;web" `
-            --add-data "static;static" `
-            --add-data "pdf_generation;pdf_generation" `
-            --add-data "data;data" `
-            --add-binary "$gtkPath\libgobject-2.0-0.dll;." `
-            --add-binary "$gtkPath\libglib-2.0-0.dll;." `
-            --add-binary "$gtkPath\libgio-2.0-0.dll;." `
-            --add-binary "$gtkPath\libgmodule-2.0-0.dll;." `
-            --add-binary "$gtkPath\libgthread-2.0-0.dll;." `
-            --add-binary "$gtkPath\libcairo-2.dll;." `
-            --add-binary "$gtkPath\libcairo-gobject-2.dll;." `
-            --add-binary "$gtkPath\libpango-1.0-0.dll;." `
-            --add-binary "$gtkPath\libpangocairo-1.0-0.dll;." `
-            --add-binary "$gtkPath\libpangowin32-1.0-0.dll;." `
-            --add-binary "$gtkPath\libgdk_pixbuf-2.0-0.dll;." `
-            --add-binary "$gtkPath\libharfbuzz-0.dll;." `
-            --add-binary "$gtkPath\libfontconfig-1.dll;." `
-            --add-binary "$gtkPath\libfreetype-6.dll;." `
-            --add-binary "$gtkPath\libffi-6.dll;." `
-            --add-binary "$gtkPath\libintl-8.dll;." `
-            --add-binary "$gtkPath\libiconv-2.dll;." `
-            --add-binary "$gtkPath\libwinpthread-1.dll;." `
-            --add-binary "$gtkPath\zlib1.dll;." `
-            --add-binary "$gtkPath\libpng16-16.dll;." `
-            --add-binary "$gtkPath\libexpat-1.dll;." `
-            --add-binary "$gtkPath\libbz2-1.dll;." `
-            --hidden-import "eel" `
-            --hidden-import "seances" `
-            --hidden-import "enseignants" `
-            --hidden-import "configuration" `
-            --hidden-import "assignements" `
-            --hidden-import "pdf_generation.surveillance_report" `
-            --hidden-import "ortools.sat.python.cp_model" `
-            --hidden-import "ortools.sat" `
-            --hidden-import "ortools.linear_solver" `
-            --hidden-import "weasyprint" `
-            --hidden-import "weasyprint.css" `
-            --hidden-import "weasyprint.html" `
-            --hidden-import "cffi" `
-            --hidden-import "cairocffi" `
-            --hidden-import "openpyxl" `
-            --hidden-import "pandas" `
-            --hidden-import "pydantic" `
-            --collect-all "weasyprint" `
-            --collect-all "eel" `
-            --collect-all "ortools" `
-            --name "ISIexams-${{ matrix.architecture }}" `
-            --clean app.py
+          # List of essential GTK DLLs for WeasyPrint
+          $essentialDlls = @(
+            "libgobject-2.0-0.dll",
+            "libglib-2.0-0.dll", 
+            "libgio-2.0-0.dll",
+            "libgmodule-2.0-0.dll",
+            "libcairo-2.dll",
+            "libpango-1.0-0.dll",
+            "libpangocairo-1.0-0.dll",
+            "libgdk_pixbuf-2.0-0.dll",
+            "libharfbuzz-0.dll",
+            "libfontconfig-1.dll",
+            "libfreetype-6.dll",
+            "libintl-8.dll"
+          )
+          
+          # Check which DLLs exist and build the command
+          $binaryArgs = @()
+          foreach ($dll in $essentialDlls) {
+            $dllPath = Join-Path $gtkPath $dll
+            if (Test-Path $dllPath) {
+              $binaryArgs += "--add-binary"
+              $binaryArgs += "`"$dllPath;.`""
+              Write-Host "Found: $dll"
+            } else {
+              Write-Host "Missing: $dll (skipping)"
+            }
+          }
+          
+          # Build PyInstaller command with existing DLLs
+          $pyinstallerCmd = @(
+            "pyinstaller",
+            "--noconfirm",
+            "--onefile", 
+            "--windowed",
+            "--add-data", "web;web",
+            "--add-data", "static;static", 
+            "--add-data", "pdf_generation;pdf_generation",
+            "--add-data", "data;data"
+          ) + $binaryArgs + @(
+            "--hidden-import", "eel",
+            "--hidden-import", "seances",
+            "--hidden-import", "enseignants",
+            "--hidden-import", "configuration",
+            "--hidden-import", "assignements",
+            "--hidden-import", "pdf_generation.surveillance_report",
+            "--hidden-import", "ortools.sat.python.cp_model",
+            "--hidden-import", "ortools.sat",
+            "--hidden-import", "ortools.linear_solver",
+            "--hidden-import", "weasyprint",
+            "--hidden-import", "weasyprint.css",
+            "--hidden-import", "weasyprint.html",
+            "--hidden-import", "cffi",
+            "--hidden-import", "cairocffi",
+            "--hidden-import", "openpyxl",
+            "--hidden-import", "pandas",
+            "--hidden-import", "pydantic",
+            "--collect-all", "weasyprint",
+            "--collect-all", "eel",
+            "--collect-all", "ortools",
+            "--name", "ISIexams-${{ matrix.architecture }}",
+            "--clean",
+            "app.py"
+          )
+          
+          Write-Host "Running PyInstaller with $($binaryArgs.Count / 2) GTK libraries..."
+          & $pyinstallerCmd[0] $pyinstallerCmd[1..($pyinstallerCmd.Length-1)]
         } else {
           Write-Host "Warning: GTK runtime not found, building without GTK libraries"
           pyinstaller --noconfirm --onefile --windowed `
