@@ -25,11 +25,13 @@ jobs:
         architecture: ${{ matrix.architecture }}
 
     - name: Install system dependencies
+      shell: powershell
       run: |
         # Install GTK3 runtime for weasyprint
         choco install -y gtk-runtime
 
     - name: Install Python dependencies
+      shell: powershell
       run: |
         python -m pip install --upgrade pip
         
@@ -44,18 +46,20 @@ jobs:
         pip install weasyprint
         
         # Install OR-Tools (REQUIRED - fail if not available)
-        echo "Installing OR-Tools (required dependency)..."
+        Write-Host "Installing OR-Tools (required dependency)..."
         pip install "ortools>=9.0.0"
         
         # Verify OR-Tools installation
         python -c "import ortools; print('OR-Tools installed successfully:', ortools.__version__)"
 
     - name: Create necessary directories
+      shell: cmd
       run: |
         if not exist data mkdir data
         echo. > data\.gitkeep
 
     - name: Test imports
+      shell: powershell
       run: |
         python -c "import eel; print('Eel imported successfully')"
         python -c "import weasyprint; print('Weasyprint imported successfully')"
@@ -117,17 +121,18 @@ jobs:
           --clean app.py
 
     - name: Verify build output
+      shell: powershell
       run: |
-        echo Build completed. Checking output:
-        if exist dist\ISIexams-${{ matrix.architecture }}-${{ matrix.build-type }}.exe (
-          echo SUCCESS: Executable created successfully with full OR-Tools support
-          dir dist\ISIexams-${{ matrix.architecture }}-${{ matrix.build-type }}.exe
-        ) else (
-          echo ERROR: Executable not found!
-          echo Contents of dist directory:
-          dir dist
-          exit /b 1
-        )
+        Write-Host "Build completed. Checking output:"
+        if (Test-Path "dist\ISIexams-${{ matrix.architecture }}-${{ matrix.build-type }}.exe") {
+          Write-Host "SUCCESS: Executable created successfully with full OR-Tools support"
+          Get-ChildItem "dist\ISIexams-${{ matrix.architecture }}-${{ matrix.build-type }}.exe"
+        } else {
+          Write-Host "ERROR: Executable not found!"
+          Write-Host "Contents of dist directory:"
+          Get-ChildItem dist
+          exit 1
+        }
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
