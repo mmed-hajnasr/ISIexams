@@ -104,34 +104,98 @@ jobs:
           exit /b 1
         )
         
-        # Build with PyInstaller (simpler approach - include GTK runtime separately)
-        pyinstaller --noconfirm --onefile --windowed ^
-          --add-data "web;web" ^
-          --add-data "static;static" ^
-          --add-data "pdf_generation;pdf_generation" ^
-          --add-data "data;data" ^
-          --hidden-import "eel" ^
-          --hidden-import "seances" ^
-          --hidden-import "enseignants" ^
-          --hidden-import "configuration" ^
-          --hidden-import "assignements" ^
-          --hidden-import "pdf_generation.surveillance_report" ^
-          --hidden-import "ortools.sat.python.cp_model" ^
-          --hidden-import "ortools.sat" ^
-          --hidden-import "ortools.linear_solver" ^
-          --hidden-import "weasyprint" ^
-          --hidden-import "weasyprint.css" ^
-          --hidden-import "weasyprint.html" ^
-          --hidden-import "cffi" ^
-          --hidden-import "cairocffi" ^
-          --hidden-import "openpyxl" ^
-          --hidden-import "pandas" ^
-          --hidden-import "pydantic" ^
-          --collect-all "weasyprint" ^
-          --collect-all "eel" ^
-          --collect-all "ortools" ^
-          --name "ISIexams-${{ matrix.architecture }}" ^
-          --clean app.py
+        # Build with PyInstaller including GTK libraries directly
+        $gtkPath = ""
+        if (Test-Path "C:\Program Files\GTK3-Runtime Win64\bin") {
+          $gtkPath = "C:\Program Files\GTK3-Runtime Win64\bin"
+        } elseif (Test-Path "C:\GTK\bin") {
+          $gtkPath = "C:\GTK\bin"
+        }
+        
+        if ($gtkPath) {
+          Write-Host "Using GTK libraries from: $gtkPath"
+          # Add GTK bin to PATH for PyInstaller to find libraries
+          $env:PATH = "$gtkPath;$env:PATH"
+          
+          pyinstaller --noconfirm --onefile --windowed ^
+            --add-data "web;web" ^
+            --add-data "static;static" ^
+            --add-data "pdf_generation;pdf_generation" ^
+            --add-data "data;data" ^
+            --add-binary "$gtkPath\libgobject-2.0-0.dll;." ^
+            --add-binary "$gtkPath\libglib-2.0-0.dll;." ^
+            --add-binary "$gtkPath\libgio-2.0-0.dll;." ^
+            --add-binary "$gtkPath\libgmodule-2.0-0.dll;." ^
+            --add-binary "$gtkPath\libgthread-2.0-0.dll;." ^
+            --add-binary "$gtkPath\libcairo-2.dll;." ^
+            --add-binary "$gtkPath\libcairo-gobject-2.dll;." ^
+            --add-binary "$gtkPath\libpango-1.0-0.dll;." ^
+            --add-binary "$gtkPath\libpangocairo-1.0-0.dll;." ^
+            --add-binary "$gtkPath\libpangowin32-1.0-0.dll;." ^
+            --add-binary "$gtkPath\libgdk_pixbuf-2.0-0.dll;." ^
+            --add-binary "$gtkPath\libharfbuzz-0.dll;." ^
+            --add-binary "$gtkPath\libfontconfig-1.dll;." ^
+            --add-binary "$gtkPath\libfreetype-6.dll;." ^
+            --add-binary "$gtkPath\libffi-6.dll;." ^
+            --add-binary "$gtkPath\libintl-8.dll;." ^
+            --add-binary "$gtkPath\libiconv-2.dll;." ^
+            --add-binary "$gtkPath\libwinpthread-1.dll;." ^
+            --add-binary "$gtkPath\zlib1.dll;." ^
+            --add-binary "$gtkPath\libpng16-16.dll;." ^
+            --add-binary "$gtkPath\libexpat-1.dll;." ^
+            --add-binary "$gtkPath\libbz2-1.dll;." ^
+            --hidden-import "eel" ^
+            --hidden-import "seances" ^
+            --hidden-import "enseignants" ^
+            --hidden-import "configuration" ^
+            --hidden-import "assignements" ^
+            --hidden-import "pdf_generation.surveillance_report" ^
+            --hidden-import "ortools.sat.python.cp_model" ^
+            --hidden-import "ortools.sat" ^
+            --hidden-import "ortools.linear_solver" ^
+            --hidden-import "weasyprint" ^
+            --hidden-import "weasyprint.css" ^
+            --hidden-import "weasyprint.html" ^
+            --hidden-import "cffi" ^
+            --hidden-import "cairocffi" ^
+            --hidden-import "openpyxl" ^
+            --hidden-import "pandas" ^
+            --hidden-import "pydantic" ^
+            --collect-all "weasyprint" ^
+            --collect-all "eel" ^
+            --collect-all "ortools" ^
+            --name "ISIexams-${{ matrix.architecture }}" ^
+            --clean app.py
+        } else {
+          Write-Host "Warning: GTK runtime not found, building without GTK libraries"
+          pyinstaller --noconfirm --onefile --windowed ^
+            --add-data "web;web" ^
+            --add-data "static;static" ^
+            --add-data "pdf_generation;pdf_generation" ^
+            --add-data "data;data" ^
+            --hidden-import "eel" ^
+            --hidden-import "seances" ^
+            --hidden-import "enseignants" ^
+            --hidden-import "configuration" ^
+            --hidden-import "assignements" ^
+            --hidden-import "pdf_generation.surveillance_report" ^
+            --hidden-import "ortools.sat.python.cp_model" ^
+            --hidden-import "ortools.sat" ^
+            --hidden-import "ortools.linear_solver" ^
+            --hidden-import "weasyprint" ^
+            --hidden-import "weasyprint.css" ^
+            --hidden-import "weasyprint.html" ^
+            --hidden-import "cffi" ^
+            --hidden-import "cairocffi" ^
+            --hidden-import "openpyxl" ^
+            --hidden-import "pandas" ^
+            --hidden-import "pydantic" ^
+            --collect-all "weasyprint" ^
+            --collect-all "eel" ^
+            --collect-all "ortools" ^
+            --name "ISIexams-${{ matrix.architecture }}" ^
+            --clean app.py
+        }
 
     - name: Verify build output
       shell: powershell
@@ -162,27 +226,12 @@ jobs:
         # Copy static directory
         Copy-Item "static" "release\" -Recurse
         
-        # Copy GTK3 runtime for WeasyPrint support
-        if (Test-Path "C:\Program Files\GTK3-Runtime Win64") {
-          Write-Host "Including GTK3 runtime for WeasyPrint support..."
-          New-Item -ItemType Directory -Force -Path "release\gtk3-runtime"
-          Copy-Item "C:\Program Files\GTK3-Runtime Win64\*" "release\gtk3-runtime\" -Recurse -ErrorAction SilentlyContinue
-        } elseif (Test-Path "C:\GTK") {
-          Write-Host "Including GTK runtime from C:\GTK..."
-          New-Item -ItemType Directory -Force -Path "release\gtk3-runtime"
-          Copy-Item "C:\GTK\*" "release\gtk3-runtime\" -Recurse -ErrorAction SilentlyContinue
-        } else {
-          Write-Host "Warning: GTK runtime not found - PDF generation may not work"
-        }
+        # Since GTK libraries are now bundled in the executable, we don't need a separate runtime folder
+        Write-Host "GTK libraries are bundled directly in the executable"
         
-        # Create a startup script that sets up GTK environment
+        # Create a simple startup script (optional - executable should work directly)
         Write-Output "@echo off" | Out-File -FilePath "release\ISIexams.bat" -Encoding ascii
-        Write-Output "set GTK_PATH=%~dp0gtk3-runtime" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
-        Write-Output "set PATH=%GTK_PATH%\bin;%PATH%" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
-        Write-Output "set GI_TYPELIB_PATH=%GTK_PATH%\lib\girepository-1.0" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
-        Write-Output "set GDK_PIXBUF_MODULE_FILE=%GTK_PATH%\lib\gdk-pixbuf-2.0\2.10.0\loaders.cache" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
         Write-Output "echo Starting ISIexams..." | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
-        Write-Output "echo GTK Runtime: %GTK_PATH%" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
         Write-Output "`"%~dp0ISIexams-${{ matrix.architecture }}.exe`"" | Out-File -FilePath "release\ISIexams.bat" -Append -Encoding ascii
         
         # Create README with instructions
@@ -190,15 +239,18 @@ jobs:
         Write-Output "" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "## How to run:" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "1. Extract this zip file to a folder" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
-        Write-Output "2. Run ISIexams.bat (recommended - sets up GTK for PDF generation)" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
-        Write-Output "   OR double-click ISIexams-${{ matrix.architecture }}.exe directly" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "2. Double-click ISIexams-${{ matrix.architecture }}.exe to run the application" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "   (Or use ISIexams.bat if you prefer)" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "## Contents:" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
-        Write-Output "- ISIexams-${{ matrix.architecture }}.exe: Main application" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
-        Write-Output "- ISIexams.bat: Startup script with GTK environment" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- ISIexams-${{ matrix.architecture }}.exe: Main application (with bundled GTK libraries)" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- ISIexams.bat: Optional startup script" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "- web/: Web interface files" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         Write-Output "- static/: Application assets" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
-        Write-Output "- gtk3-runtime/: GTK libraries for PDF generation" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "## Notes:" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- All GTK libraries for PDF generation are bundled in the executable" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
+        Write-Output "- No additional software installation required" | Out-File -FilePath "release\README.txt" -Append -Encoding utf8
         
         # Create zip file
         Compress-Archive -Path "release\*" -DestinationPath "ISIexams-${{ matrix.architecture }}.zip"
@@ -221,11 +273,20 @@ jobs:
         body: |
           ## ISIexams Release
           
-          This release contains:
-          - **ISIexams-${{ matrix.architecture }}.exe** - The main application executable
-          - **web/** - Web interface files
-          - **static/** - Static assets (images, etc.)
+          This release contains a complete, self-contained application:
+          - 📱 **ISIexams-${{ matrix.architecture }}.exe** - Main application with bundled GTK libraries
+          - 🌐 **web/** - Web interface files
+          - 🖼️ **static/** - Static assets (images, etc.)
           
-          Simply extract the zip file and run the executable to start the application.
+          **Key Features:**
+          - ✅ All GTK/GLib libraries bundled for PDF generation (WeasyPrint)
+          - ✅ OR-Tools optimization solver included
+          - ✅ Complete web interface
+          - ✅ No additional software installation required
+          
+          **How to use:**
+          1. Download and extract the zip file
+          2. Run `ISIexams-${{ matrix.architecture }}.exe`
+          3. The application will start with full PDF generation support
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
