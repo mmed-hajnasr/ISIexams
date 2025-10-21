@@ -1,0 +1,134 @@
+name: CD # Continuous Deployment
+
+on:
+  push:
+    tags:
+      - "[v]?[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  build:
+    name: Build Windows Executables
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.11']
+        architecture: ['x64']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: ${{ matrix.architecture }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-build.txt
+
+    - name: Verify project structure
+      run: |
+        echo Verifying required files and directories...
+        if not exist web echo ERROR: web directory not found! && exit /b 1
+        if not exist app.py echo ERROR: app.py not found! && exit /b 1  
+        if not exist seances.py echo ERROR: seances.py not found! && exit /b 1
+        if not exist enseignants.py echo ERROR: enseignants.py not found! && exit /b 1
+        if not exist configuration.py echo ERROR: configuration.py not found! && exit /b 1
+        if not exist assignements.py echo ERROR: assignements.py not found! && exit /b 1
+        echo All required files found!
+
+    - name: Create data directory
+      run: if not exist data mkdir data
+
+    - name: Build with PyInstaller
+      shell: cmd
+      run: |
+        # Add debug information
+        echo Python version:
+        python --version
+        echo Installed packages:
+        pip list
+        
+        # Build with PyInstaller using spec file if available, otherwise direct build
+        if exist isi_exams.spec (
+          echo Using spec file: isi_exams.spec
+          pyinstaller --clean --distpath dist_windows --workpath build_windows --target-architecture x86_64 isi_exams.spec
+        ) else (
+          echo Building directly...
+          pyinstaller --clean --distpath dist_windows --workpath build_windows --name ISI_Exams --target-architecture x86_64 --add-data "web;web" --add-data "pdf_generation;pdf_generation" --add-data "static;static" --hidden-import eel --hidden-import seances --hidden-import enseignants --hidden-import configuration --hidden-import assignements --hidden-import ortools.sat.python.cp_model --hidden-import weasyprint --hidden-import pandas --hidden-import openpyxl --hidden-import pydantic --noconfirm --log-level INFO app.py
+        )
+
+    - name: Create ISIExamsSetter Package
+      shell: cmd  
+      run: |
+        # Create package directory
+        mkdir ISIExamsSetter
+        
+        # Copy executable and dependencies
+        if exist dist_windows\ISI_Exams (
+          xcopy dist_windows\ISI_Exams\* ISIExamsSetter\ /E /I /H /Y
+        ) else if exist dist_windows\ISI_Exams.exe (
+          copy dist_windows\ISI_Exams.exe ISIExamsSetter\ISI_Exams.exe
+        )
+        
+        # Ensure web and static folders are copied
+        if exist web xcopy web ISIExamsSetter\web\ /E /I /H /Y
+        if exist static xcopy static ISIExamsSetter\static\ /E /I /H /Y  
+        if exist data xcopy data ISIExamsSetter\data\ /E /I /H /Y
+        if exist pdf_generation xcopy pdf_generation ISIExamsSetter\pdf_generation\ /E /I /H /Y
+        
+        # Create batch file to run the application
+        echo @echo off > ISIExamsSetter\Run_ISI_Exams.bat
+        echo title ISI Exams Management System >> ISIExamsSetter\Run_ISI_Exams.bat
+        echo echo ======================================== >> ISIExamsSetter\Run_ISI_Exams.bat
+        echo echo ISI Exams Management System >> ISIExamsSetter\Run_ISI_Exams.bat
+        echo echo Windows Compatible Version >> ISIExamsSetter\Run_ISI_Exams.bat
+        echo echo ======================================== >> ISIExamsSetter\Run_ISI_Exams.bat
+        echo echo. >> ISIExamsSetter\Run_ISI_Exams.bat
+        echo echo Starting application... >> ISIExamsSetter\Run_ISI_Exams.bat
+        echo echo Please wait while the system loads... >> ISIExamsSetter\Run_ISI_Exams.bat
+        echo echo. >> ISIExamsSetter\Run_ISI_Exams.bat
+        echo ISI_Exams.exe >> ISIExamsSetter\Run_ISI_Exams.bat
+        echo pause >> ISIExamsSetter\Run_ISI_Exams.bat
+        
+        # Create README
+        echo ISI Exams Management System - Windows Version > ISIExamsSetter\README_Windows.txt
+        echo ================================================= >> ISIExamsSetter\README_Windows.txt
+        echo. >> ISIExamsSetter\README_Windows.txt  
+        echo QUICK START: >> ISIExamsSetter\README_Windows.txt
+        echo 1. Double-click "Run_ISI_Exams.bat" to start >> ISIExamsSetter\README_Windows.txt
+        echo 2. Wait for the application to load >> ISIExamsSetter\README_Windows.txt
+        echo 3. Your browser will open automatically >> ISIExamsSetter\README_Windows.txt
+        echo 4. If browser doesn't open, go to: http://localhost:8080/seances.html >> ISIExamsSetter\README_Windows.txt
+
+    - name: Create ZIP package
+      shell: powershell
+      run: |
+        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+        $zipName = "ISIExamsSetter_$timestamp.zip"
+        Compress-Archive -Path "ISIExamsSetter\*" -DestinationPath $zipName
+        Write-Output "Created ZIP package: $zipName"
+
+    - name: Upload ISIExamsSetter Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: ISIExamsSetter-Windows-${{ matrix.architecture }}
+        path: ISIExamsSetter/
+
+    - name: Upload ZIP Package  
+      uses: actions/upload-artifact@v4
+      with:
+        name: ISIExamsSetter-ZIP-${{ matrix.architecture }}
+        path: ISIExamsSetter_*.zip
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          ISIExamsSetter_*.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
