@@ -82,27 +82,28 @@ jobs:
         python -c "from seances import Seances; print('Local modules imported successfully')"
 
     - name: Build with PyInstaller
-      shell: cmd
+      shell: powershell
       run: |
         # Add debug information
-        echo Python version:
+        Write-Host "Python version:"
         python --version
-        echo Installed packages:
+        Write-Host "Installed packages:"
+        Write-Host "Installed packages:"
         pip list
-        echo.
-        echo Directory structure:
-        dir /b
-        echo.
+        Write-Host ""
+        Write-Host "Directory structure:"
+        Get-ChildItem
+        Write-Host ""
         
         # Verify required files exist
-        if not exist app.py (
-          echo ERROR: app.py not found!
-          exit /b 1
-        )
-        if not exist web (
-          echo ERROR: web directory not found!
-          exit /b 1
-        )
+        if (-not (Test-Path "app.py")) {
+          Write-Host "ERROR: app.py not found!"
+          exit 1
+        }
+        if (-not (Test-Path "web")) {
+          Write-Host "ERROR: web directory not found!"
+          exit 1
+        }
         
         # Build with PyInstaller including GTK libraries directly
         $gtkPath = ""
@@ -117,83 +118,83 @@ jobs:
           # Add GTK bin to PATH for PyInstaller to find libraries
           $env:PATH = "$gtkPath;$env:PATH"
           
-          pyinstaller --noconfirm --onefile --windowed ^
-            --add-data "web;web" ^
-            --add-data "static;static" ^
-            --add-data "pdf_generation;pdf_generation" ^
-            --add-data "data;data" ^
-            --add-binary "$gtkPath\libgobject-2.0-0.dll;." ^
-            --add-binary "$gtkPath\libglib-2.0-0.dll;." ^
-            --add-binary "$gtkPath\libgio-2.0-0.dll;." ^
-            --add-binary "$gtkPath\libgmodule-2.0-0.dll;." ^
-            --add-binary "$gtkPath\libgthread-2.0-0.dll;." ^
-            --add-binary "$gtkPath\libcairo-2.dll;." ^
-            --add-binary "$gtkPath\libcairo-gobject-2.dll;." ^
-            --add-binary "$gtkPath\libpango-1.0-0.dll;." ^
-            --add-binary "$gtkPath\libpangocairo-1.0-0.dll;." ^
-            --add-binary "$gtkPath\libpangowin32-1.0-0.dll;." ^
-            --add-binary "$gtkPath\libgdk_pixbuf-2.0-0.dll;." ^
-            --add-binary "$gtkPath\libharfbuzz-0.dll;." ^
-            --add-binary "$gtkPath\libfontconfig-1.dll;." ^
-            --add-binary "$gtkPath\libfreetype-6.dll;." ^
-            --add-binary "$gtkPath\libffi-6.dll;." ^
-            --add-binary "$gtkPath\libintl-8.dll;." ^
-            --add-binary "$gtkPath\libiconv-2.dll;." ^
-            --add-binary "$gtkPath\libwinpthread-1.dll;." ^
-            --add-binary "$gtkPath\zlib1.dll;." ^
-            --add-binary "$gtkPath\libpng16-16.dll;." ^
-            --add-binary "$gtkPath\libexpat-1.dll;." ^
-            --add-binary "$gtkPath\libbz2-1.dll;." ^
-            --hidden-import "eel" ^
-            --hidden-import "seances" ^
-            --hidden-import "enseignants" ^
-            --hidden-import "configuration" ^
-            --hidden-import "assignements" ^
-            --hidden-import "pdf_generation.surveillance_report" ^
-            --hidden-import "ortools.sat.python.cp_model" ^
-            --hidden-import "ortools.sat" ^
-            --hidden-import "ortools.linear_solver" ^
-            --hidden-import "weasyprint" ^
-            --hidden-import "weasyprint.css" ^
-            --hidden-import "weasyprint.html" ^
-            --hidden-import "cffi" ^
-            --hidden-import "cairocffi" ^
-            --hidden-import "openpyxl" ^
-            --hidden-import "pandas" ^
-            --hidden-import "pydantic" ^
-            --collect-all "weasyprint" ^
-            --collect-all "eel" ^
-            --collect-all "ortools" ^
-            --name "ISIexams-${{ matrix.architecture }}" ^
+          pyinstaller --noconfirm --onefile --windowed `
+            --add-data "web;web" `
+            --add-data "static;static" `
+            --add-data "pdf_generation;pdf_generation" `
+            --add-data "data;data" `
+            --add-binary "$gtkPath\libgobject-2.0-0.dll;." `
+            --add-binary "$gtkPath\libglib-2.0-0.dll;." `
+            --add-binary "$gtkPath\libgio-2.0-0.dll;." `
+            --add-binary "$gtkPath\libgmodule-2.0-0.dll;." `
+            --add-binary "$gtkPath\libgthread-2.0-0.dll;." `
+            --add-binary "$gtkPath\libcairo-2.dll;." `
+            --add-binary "$gtkPath\libcairo-gobject-2.dll;." `
+            --add-binary "$gtkPath\libpango-1.0-0.dll;." `
+            --add-binary "$gtkPath\libpangocairo-1.0-0.dll;." `
+            --add-binary "$gtkPath\libpangowin32-1.0-0.dll;." `
+            --add-binary "$gtkPath\libgdk_pixbuf-2.0-0.dll;." `
+            --add-binary "$gtkPath\libharfbuzz-0.dll;." `
+            --add-binary "$gtkPath\libfontconfig-1.dll;." `
+            --add-binary "$gtkPath\libfreetype-6.dll;." `
+            --add-binary "$gtkPath\libffi-6.dll;." `
+            --add-binary "$gtkPath\libintl-8.dll;." `
+            --add-binary "$gtkPath\libiconv-2.dll;." `
+            --add-binary "$gtkPath\libwinpthread-1.dll;." `
+            --add-binary "$gtkPath\zlib1.dll;." `
+            --add-binary "$gtkPath\libpng16-16.dll;." `
+            --add-binary "$gtkPath\libexpat-1.dll;." `
+            --add-binary "$gtkPath\libbz2-1.dll;." `
+            --hidden-import "eel" `
+            --hidden-import "seances" `
+            --hidden-import "enseignants" `
+            --hidden-import "configuration" `
+            --hidden-import "assignements" `
+            --hidden-import "pdf_generation.surveillance_report" `
+            --hidden-import "ortools.sat.python.cp_model" `
+            --hidden-import "ortools.sat" `
+            --hidden-import "ortools.linear_solver" `
+            --hidden-import "weasyprint" `
+            --hidden-import "weasyprint.css" `
+            --hidden-import "weasyprint.html" `
+            --hidden-import "cffi" `
+            --hidden-import "cairocffi" `
+            --hidden-import "openpyxl" `
+            --hidden-import "pandas" `
+            --hidden-import "pydantic" `
+            --collect-all "weasyprint" `
+            --collect-all "eel" `
+            --collect-all "ortools" `
+            --name "ISIexams-${{ matrix.architecture }}" `
             --clean app.py
         } else {
           Write-Host "Warning: GTK runtime not found, building without GTK libraries"
-          pyinstaller --noconfirm --onefile --windowed ^
-            --add-data "web;web" ^
-            --add-data "static;static" ^
-            --add-data "pdf_generation;pdf_generation" ^
-            --add-data "data;data" ^
-            --hidden-import "eel" ^
-            --hidden-import "seances" ^
-            --hidden-import "enseignants" ^
-            --hidden-import "configuration" ^
-            --hidden-import "assignements" ^
-            --hidden-import "pdf_generation.surveillance_report" ^
-            --hidden-import "ortools.sat.python.cp_model" ^
-            --hidden-import "ortools.sat" ^
-            --hidden-import "ortools.linear_solver" ^
-            --hidden-import "weasyprint" ^
-            --hidden-import "weasyprint.css" ^
-            --hidden-import "weasyprint.html" ^
-            --hidden-import "cffi" ^
-            --hidden-import "cairocffi" ^
-            --hidden-import "openpyxl" ^
-            --hidden-import "pandas" ^
-            --hidden-import "pydantic" ^
-            --collect-all "weasyprint" ^
-            --collect-all "eel" ^
-            --collect-all "ortools" ^
-            --name "ISIexams-${{ matrix.architecture }}" ^
+          pyinstaller --noconfirm --onefile --windowed `
+            --add-data "web;web" `
+            --add-data "static;static" `
+            --add-data "pdf_generation;pdf_generation" `
+            --add-data "data;data" `
+            --hidden-import "eel" `
+            --hidden-import "seances" `
+            --hidden-import "enseignants" `
+            --hidden-import "configuration" `
+            --hidden-import "assignements" `
+            --hidden-import "pdf_generation.surveillance_report" `
+            --hidden-import "ortools.sat.python.cp_model" `
+            --hidden-import "ortools.sat" `
+            --hidden-import "ortools.linear_solver" `
+            --hidden-import "weasyprint" `
+            --hidden-import "weasyprint.css" `
+            --hidden-import "weasyprint.html" `
+            --hidden-import "cffi" `
+            --hidden-import "cairocffi" `
+            --hidden-import "openpyxl" `
+            --hidden-import "pandas" `
+            --hidden-import "pydantic" `
+            --collect-all "weasyprint" `
+            --collect-all "eel" `
+            --collect-all "ortools" `
+            --name "ISIexams-${{ matrix.architecture }}" `
             --clean app.py
         }
 
